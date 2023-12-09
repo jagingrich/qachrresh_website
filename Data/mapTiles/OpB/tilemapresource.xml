@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+    <TileMap version="1.0.0" tilemapservice="http://tms.osgeo.org/1.0.0">
+      <Title>OperationB</Title>
+      <Abstract></Abstract>
+      <SRS>EPSG:3857</SRS>
+      <BoundingBox minx="5.65607650868146" miny="37.32319086163059" maxx="5.65618067750490" maxy="37.32327257875656"/>
+      <Origin x="5.65607650868146" y="37.32319086163059"/>
+      <TileFormat width="256" height="256" mime-type="image/png" extension="png"/>
+      <TileSets profile="mercator">
+        <TileSet href="21" units-per-pixel="0.07464553542137" order="21"/>
+        <TileSet href="22" units-per-pixel="0.03732276771069" order="22"/>
+        <TileSet href="23" units-per-pixel="0.01866138385534" order="23"/>
+      </TileSets>
+    </TileMap>
+    

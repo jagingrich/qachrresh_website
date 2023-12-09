@@ -1,7 +1,7 @@
 ﻿<!DOCTYPE html>
 <html>
 <head>
-    <title>AES Interactive Site Plan</title>
+    <title>Qach Rresh Interactive Site Plan</title>
     <link rel="icon" href="https://raw.githubusercontent.com/jagingrich/samo_website/main/Data/mapIcons/SamoWebsite_Icon.png"
           type="image/x-icon">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -52,7 +52,7 @@
 <body>
     <div id="map"></div>
     <div id="sidebar"></div>
-    <!--
+    
     <div id="loading">
         <div id="progressBox">
             <div id="progressBg">
@@ -60,7 +60,6 @@
             </div>
         </div>
     </div>
-    -->
 
 
     <script>// initialize the map
@@ -116,12 +115,11 @@
             count: 0,
             update() {
                 if (this.count == shpLayers.length) {
-                if(0 == 1){
                     addLayerGroups(
                         mapInput = map,
                         layerControl = control,
-                        layers = [...tileLayers, ...shpFiles],
-                        groups = generateLayerGroups({ groups: groups }),
+                        layers = [...tileLayer2, ...shpFiles],
+                        groups = generateLayerGroups({ groups: groups2 }),
                         functionOnLoad = function () {
                             window.control._layers.forEach((l) => {
                                 Object.values(l.layer._layers).forEach((e) => {
@@ -157,7 +155,6 @@
                         }
                     );
                 }
-                }
             },
             get iteration() {
                 return this.count;
@@ -170,8 +167,8 @@
 
         //setting initial map variables
         var shpFiles = [];
-        var groups = [];
-        var tileLayers = [];
+        var groups2 = [["DEM", "DEM"]];
+        var tileLayer2 = ['https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapTiles/DEM/{z}/{x}/{y}.png'];
         var shpLayers = [];
         var attribution;
         var dropdownName;
@@ -203,18 +200,10 @@
         });
 
         var control = L.control.layers({}, null, { collapsed: false }).addTo(map);
-        //var dem = 
-        L.tileLayer('./Data/mapTiles/DEM/{z}/{x}/{y}.png', {
-            //maxZoom: 22,
-            //minZoom: 17,
-            //tms: true,
-            //attribution: attribution
-        }).addTo(map);
-        console.log(map);
 
         //creating map bounds
-        //var mapbounds = L.latLngBounds(L.latLng(40.49952, 25.52879), L.latLng(40.50176, 25.53177));
-        //map.flyToBounds(mapbounds);
+        var mapbounds = L.latLngBounds(L.latLng(40.49952, 25.52879), L.latLng(40.50176, 25.53177));
+        map.flyToBounds(mapbounds);
 
         //reading in shapefiles
         shpLayers.forEach((s) => readSHPs(s));

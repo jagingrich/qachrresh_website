@@ -95,12 +95,17 @@
                 switch(select) {
                     case 'QR':
                         console.log("Qach Rresh");
+                        map.flyToBounds(mapbounds);
                         break;
                     case 'OPA':
                         console.log("Operation A");
+                        map.flyToBounds(mapAbounds);
                         break;
                     case 'OPB':
                         console.log("Operation B");
+                        map.flyToBounds(mapBbounds);
+                        break;
+                    default:
                         break;
                 }
             },
@@ -109,7 +114,7 @@
             },
             set select(select) {
                 this.state = select;
-                this.update(this.select);
+                this.update(this.state);
             }
         }
 
@@ -171,7 +176,6 @@
                                     newDiv.title = "Select Monument Name to Zoom In";
                                 });
                             loadDescriptions(); //loading and formatting text descriptions for monuments
-                            addLegend(); //adding legend to map
                             addRefresh(); //adding refresh button
                             addRecenterControl(); //adding recentering control to map
                             updateWidth(); //updating window width
@@ -179,6 +183,18 @@
                             map._size.x = roundWidth()[2];
                         }
                     );
+                    L.tileLayer(OPAtileLayer, {
+                        maxZoom: 23,
+                        minZoom: 20,
+                        tms: true,
+                        attribution: attribution
+                    }).addTo(map);
+                    L.tileLayer(OPBtileLayer, {
+                        maxZoom: 23,
+                        minZoom: 20,
+                        tms: true,
+                        attribution: attribution
+                    }).addTo(map);
                 }
             },
             get iteration() {
@@ -223,18 +239,24 @@
             center: [40.5011, 25.5322],
             zoom: 18
         });
+        var control = L.control.layers({}, null, { collapsed: false }).addTo(map);
 
-        //var control = L.control.layers({}, null, { collapsed: false }).addTo(map);
-        var dem = L.tileLayer('https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapTiles/DEM/{z}/{x}/{y}.png', {
-            maxZoom: 22,
-            minZoom: 17,
-            tms: true,
-            //attribution: attribution
-        }).addTo(map);
-
+        onkeydown = (event) => {
+            if (event.key == 'a') {
+                state.select = "OPA";
+            } else
+            if (event.key == 'b') {
+                state.select = "OPB";
+            } else
+            if (event.key == 'q') {
+                state.select = "QR";
+            }
+        };
         //creating map bounds
-        //var mapbounds = L.latLngBounds(L.latLng(40.5011, 25.5322), L.latLng(40.50176, 25.53177));
-        //map.flyToBounds(mapbounds);
+        var mapbounds = L.latLngBounds(L.latLng(40.5005, 25.5312), L.latLng(40.5016, 25.5332));
+        map.flyToBounds(mapbounds);
+        var mapAbounds = L.latLngBounds(L.latLng(40.5010, 25.5324), L.latLng(40.5012, 25.5326));
+        var mapBbounds = L.latLngBounds(L.latLng(40.5014, 25.5316), L.latLng(40.5015, 25.5317));
 
         //reading in shapefiles
         shpLayers.forEach((s) => readSHPs(s));
@@ -306,13 +328,16 @@
             }
         });
 
-        //FUNCTIONS THAT CREATE AND RUN THE SANCTUARY OF THE GREAT GODS SAMOTHRACE INTERACTIVE MAP PLAN
+//FUNCTIONS THAT CREATE AND RUN THE SANCTUARY OF THE GREAT GODS SAMOTHRACE INTERACTIVE MAP PLAN
 //Jared Gingrich 2023
 
 //update initial inputs for layers, groupings, urls, etc.
 function updateInputs() {
-    groups = [["Elevation Model", "DEM"], ["Restored State Plan", "RestoredState"]];
-    tileLayers = ['https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapTiles/DEM/{z}/{x}/{y}.png'];
+    groups = [["Elevation Model", "DEM"], ["Magnetometry", "MAG"]];
+    tileLayers = ['https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapTiles/DEM/{z}/{x}/{y}.png',
+    'https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapTiles/MAG/{z}/{x}/{y}.png'];
+    OPAtileLayer = 'https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapTiles/OpA/{z}/{x}/{y}.png';
+    OPBtileLayer = 'https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapTiles/OpB/{z}/{x}/{y}.png';
     attribution = 'JAG2023 | <a href="https://www.samothrace.emory.edu/">American Excavations Samothrace';
     shpLayers = ['https://cdn.rawgit.com/jagingrich/samo_website/main/Data/mapFeatures/SamoWeb_RestoredStatePlan_Overlay.shp',
         'https://cdn.rawgit.com/jagingrich/samo_website/main/Data/mapFeatures/SamoWeb_ActualStatePlan_Overlay.shp'];
@@ -353,14 +378,14 @@ function divCreate(divName, divContainer, type = 'div', functionOnCreate = null)
 function tileLayer(url, setAttribution = false) {
     if (setAttribution) {
         return L.tileLayer(url, {
-            maxZoom: 22,
+            maxZoom: 19,
             minZoom: 17,
             tms: true,
             attribution: attribution
         });
     } else {
         return L.tileLayer(url, {
-            maxZoom: 22,
+            maxZoom: 19,
             minZoom: 17,
             tms: true
         });
@@ -524,20 +549,26 @@ function addLayerGroups(mapInput, layerControl, layers, groups, functionOnLoad =
     //add layerGroups to map
     function addLayers(mapInput, layerGroups, layerControl) {
         var count = 0;
-        groups.forEach(function (g) {
-            if (g.name != 'Other') {
-                if (count == 0) {
-                    layerControl.addBaseLayer(g.layers.addTo(mapInput), g.name);
-                    count++;
+        if (layerControl != null) {
+            groups.forEach(function (g) {
+                if (g.name != 'Other') {
+                    if (count == 0) {
+                        layerControl.addBaseLayer(g.layers.addTo(mapInput), g.name);
+                        count++;
+                    }
+                    else {
+                        layerControl.addBaseLayer(g.layers, g.name);
+                    }
                 }
-                else {
-                    layerControl.addBaseLayer(g.layers, g.name);
+                if (g.name == 'Other') {
+                    g.layers.addTo(mapInput);
                 }
-            }
-            if (g.name == 'Other') {
+            })
+        } else {
+            groups.forEach(function (g) {
                 g.layers.addTo(mapInput);
-            }
-        })
+            })
+        }
     }
 
     //tile layers to groups
@@ -548,6 +579,19 @@ function addLayerGroups(mapInput, layerControl, layers, groups, functionOnLoad =
                 if (t.match(g.keyword) != null) {
                     tileLayer(t, true).addTo(g.layers);
                     match = true;
+                }
+            }
+            if (g.name == 'Other') {
+                out = t;
+                groups.forEach((gs) => {
+                    if (gs.keyword != 'Missing') {
+                        if (t.match(gs.keyword) != null) {
+                            out = null;
+                        }
+                    }
+                });
+                if (out != null) {
+                    tileLayer(t, true).addTo(map);
                 }
             }
         });

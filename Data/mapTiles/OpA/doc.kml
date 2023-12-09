@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2">
   <Document>
-    <name>OperationA</name>
+    <name>Operation A</name>
     <description></description>
     <Style>
       <ListStyle id="hideChildren">
@@ -9,13 +9,13 @@
       </ListStyle>
     </Style>
     <NetworkLink>
-      <name>20/540764/641619.png</name>
+      <name>20/598656/653519.png</name>
       <Region>
         <LatLonAltBox>
-          <north>37.32321244673020</north>
-          <south>37.32293942639843</south>
-          <east>5.65692901611329</east>
-          <west>5.65658569335936</west>
+          <north>40.50126945841645</north>
+          <south>40.50100839817852</south>
+          <east>25.53256988525390</east>
+          <west>25.53222656250000</west>
         </LatLonAltBox>
         <Lod>
           <minLodPixels>128</minLodPixels>
@@ -23,7 +23,28 @@
         </Lod>
       </Region>
       <Link>
-        <href>20/540764/641619.kml</href>
+        <href>20/598656/653519.kml</href>
+        <viewRefreshMode>onRegion</viewRefreshMode>
+        <viewFormat/>
+      </Link>
+    </NetworkLink>
+        
+    <NetworkLink>
+      <name>20/598657/653519.png</name>
+      <Region>
+        <LatLonAltBox>
+          <north>40.50126945841645</north>
+          <south>40.50100839817852</south>
+          <east>25.53291320800782</east>
+          <west>25.53256988525390</west>
+        </LatLonAltBox>
+        <Lod>
+          <minLodPixels>128</minLodPixels>
+          <maxLodPixels>-1</maxLodPixels>
+        </Lod>
+      </Region>
+      <Link>
+        <href>20/598657/653519.kml</href>
         <viewRefreshMode>onRegion</viewRefreshMode>
         <viewFormat/>
       </Link>

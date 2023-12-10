@@ -95,19 +95,38 @@
                 switch(select) {
                     case 'QR':
                         console.log("Qach Rresh");
-                        map.flyToBounds(mapbounds);
+                        map.setMaxZoom(21);
+                        map.setMinZoom(17);
+                        window._zoom = mapbounds;
+                        map.getPane('basemap-pane').style.zIndex = 250;
+                        map.getPane('overdata-pane').style.zIndex = 200;
+                        document.getElementById('leaflet-refresh-container').style.display = 'none';
+                        document.getElementById('leaflet-basemap-toggle-container').style.display = 'block';
                         break;
                     case 'OPA':
                         console.log("Operation A");
-                        map.flyToBounds(mapAbounds);
+                        map.setMaxZoom(23);
+                        map.setMinZoom(21);
+                        window._zoom = mapAbounds;
+                        map.getPane('basemap-pane').style.zIndex = 200;
+                        map.getPane('overdata-pane').style.zIndex = 250;
+                        document.getElementById('leaflet-refresh-container').style.display = 'block';
+                        document.getElementById('leaflet-basemap-toggle-container').style.display = 'none';
                         break;
                     case 'OPB':
                         console.log("Operation B");
-                        map.flyToBounds(mapBbounds);
+                        map.setMaxZoom(23);
+                        map.setMinZoom(21);
+                        window._zoom = mapBbounds;
+                        map.getPane('basemap-pane').style.zIndex = 200;
+                        map.getPane('overdata-pane').style.zIndex = 250;
+                        document.getElementById('leaflet-refresh-container').style.display = 'block';
+                        document.getElementById('leaflet-basemap-toggle-container').style.display = 'none';
                         break;
                     default:
                         break;
                 }
+                map.flyToBounds(window._zoom);
             },
             get select() {
                 return this.state;
@@ -164,36 +183,39 @@
                                     }
                                 });
                             });
-                            divCreate(divName = dropdownName, //adding dropdown to map
-                                divContainer = 'dropdown',
-                                type = 'select',
-                                functionOnCreate = function (newDiv) {
-                                    //creating dropdown
-                                    options = [...dropdownDefault, ...dropdownOptions(uniqueFeatures(getAllFeatures(null, control), 'fullName', 'Label'), 'WebCode', 'fullName')];
-                                    options.forEach((option) => newDiv.innerHTML += option);
-                                    //dropdown appearance/settings
-                                    newDiv.addEventListener('change', onSelect);
-                                    newDiv.title = "Select Monument Name to Zoom In";
-                                });
+                            //divCreate(divName = dropdownName, //adding dropdown to map
+                            //    divContainer = 'dropdown',
+                            //    type = 'select',
+                            //    functionOnCreate = function (newDiv) {
+                            //        //creating dropdown
+                            //        options = [...dropdownDefault, ...dropdownOptions(uniqueFeatures(getAllFeatures(null, control), 'fullName', 'Label'), 'WebCode', 'fullName')];
+                            //        options.forEach((option) => newDiv.innerHTML += option);
+                            //        //dropdown appearance/settings
+                            //        newDiv.addEventListener('change', onSelect);
+                            //        newDiv.title = "Select Monument Name to Zoom In";
+                            //    });
                             loadDescriptions(); //loading and formatting text descriptions for monuments
                             addRefresh(); //adding refresh button
                             addRecenterControl(); //adding recentering control to map
                             updateWidth(); //updating window width
                             map.invalidateSize(); //recentering map in window
                             map._size.x = roundWidth()[2];
+                            state.select = "QR";
                         }
                     );
                     L.tileLayer(OPAtileLayer, {
                         maxZoom: 23,
                         minZoom: 20,
                         tms: true,
-                        attribution: attribution
+                        attribution: attribution,
+                        pane: 'overdata-pane'
                     }).addTo(map);
                     L.tileLayer(OPBtileLayer, {
                         maxZoom: 23,
                         minZoom: 20,
                         tms: true,
-                        attribution: attribution
+                        attribution: attribution,
+                        pane: 'overdata-pane'
                     }).addTo(map);
                 }
             },
@@ -240,6 +262,12 @@
             zoom: 18
         });
         var control = L.control.layers({}, null, { collapsed: false }).addTo(map);
+        control._container.id = 'leaflet-basemap-toggle-container';
+
+        map.createPane('basemap-pane');
+        map.getPane('basemap-pane').style.zIndex = 250;
+        map.createPane('overdata-pane');
+        map.getPane('overdata-pane').style.zIndex = 200;
 
         onkeydown = (event) => {
             if (event.key == 'a') {
@@ -257,6 +285,7 @@
         map.flyToBounds(mapbounds);
         var mapAbounds = L.latLngBounds(L.latLng(40.5010, 25.5324), L.latLng(40.5012, 25.5326));
         var mapBbounds = L.latLngBounds(L.latLng(40.5014, 25.5316), L.latLng(40.5015, 25.5317));
+        window._zoom = mapbounds;
 
         //reading in shapefiles
         shpLayers.forEach((s) => readSHPs(s));
@@ -378,16 +407,18 @@ function divCreate(divName, divContainer, type = 'div', functionOnCreate = null)
 function tileLayer(url, setAttribution = false) {
     if (setAttribution) {
         return L.tileLayer(url, {
-            maxZoom: 19,
+            maxZoom: 22,
             minZoom: 17,
             tms: true,
-            attribution: attribution
+            attribution: attribution,
+            pane: 'basemap-pane'
         });
     } else {
         return L.tileLayer(url, {
-            maxZoom: 19,
+            maxZoom: 22,
             minZoom: 17,
-            tms: true
+            tms: true,
+            pane: 'basemap-pane'
         });
     }
 }
@@ -693,13 +724,13 @@ function addRefresh() {
             var button = L.DomUtil.create('a', 'leaflet-control-button', container);
             L.DomEvent.disableClickPropagation(button);
             L.DomEvent.on(button, 'click', function () {
-                selectFeature(defaultWebID)
+                state.select = "QR";
             });
 
             container.id = "leaflet-refresh-container";
             button.id = "leaflet-refresh-button";
-            button.title = "Zoom Out to All Monuments";
-            button.innerHTML = 'All Monuments';
+            button.title = "Zoom Out to Site Map";
+            button.innerHTML = 'View Site';
 
             return container;
         },
@@ -714,7 +745,7 @@ function addRecenterControl() {
     leaflet.Control.Recenter = leaflet.Control.extend({
         options: {
             position: 'topleft',
-            title: 'Zoom to Selected Monument'
+            title: 'Zoom to Selected Feature'
         },
         _createButton: function (title, className, content, container, context) {
             this.link = leaflet.DomUtil.create('a', className, container);
@@ -728,15 +759,7 @@ function addRecenterControl() {
             L.DomEvent.disableClickPropagation(container);
 
             L.DomEvent.on(this.link, 'click', function () {
-                var webCode;
-                var dropdown = document.getElementById(dropdownName);
-                var index = dropdown.options.selectedIndex;
-                if (dropdown[index].value == defaultWebID) {
-                    webCode = defaultWebID;
-                } else {
-                    webCode = dropdown[index].value;
-                }
-                zoomToFeature(getAllFeatures(null, control), webCode);
+                map.flyToBounds(window._zoom);
             });
 
             return this.link;

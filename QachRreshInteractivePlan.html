@@ -2,8 +2,10 @@
 <html>
 <head>
     <title>Qach Rresh Interactive Site Plan</title>
+    <!--
     <link rel="icon" href="https://raw.githubusercontent.com/jagingrich/samo_website/main/Data/mapIcons/SamoWebsite_Icon.png"
           type="image/x-icon">
+          -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
           integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
           crossorigin="" />
@@ -98,13 +100,13 @@
         }
 
         #leaflet-refresh-button {
+            background-color: rgba(255, 255, 255, 0.15);
             display: flex;
             align-items: center;
             position: relative;
             width: auto;
             height: auto;
             padding: 2px 8px;
-            background-color: white;
             border-radius: 1px;
             border-color: gray;
             border-style: solid;
@@ -117,10 +119,11 @@
         #leaflet-refresh-button:hover {
             opacity: 1;
             cursor: pointer;
+            background-color: rgb(255, 255, 255, 0);
         }
 
         .recenter-icon {
-            background-image: url(https://raw.githubusercontent.com/jagingrich/samo_website/main/Data/mapIcons/map-Recenter.png);
+            background-image: url(Data/mapIcons/map-Recenter.png);
             background-size: 26px 26px;
         }
 
@@ -148,6 +151,30 @@
             float: left;
             margin-right: 8px;
             opacity: 0.85;
+        }
+
+        .leaflet-control{
+            background-color: rgba(255, 255, 255, 0.15);
+            color: rgb(255, 255, 255);
+        }
+
+        .leaflet-bar a{
+            background-color: rgba(255, 255, 255, 0.15);
+            color: rgb(255, 255, 255);
+        }
+        .leaflet-bar a:hover{
+            background-color: rgba(255, 255, 255, 0);
+        }
+        .leaflet-bar a:focus{
+            background-color: rgba(255, 255, 255, 0);
+        }
+        .leaflet-bar a.leaflet-disabled{
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .leaflet-container .leaflet-control-attribution{
+            background-color: rgba(0, 0, 0, 0.8);
+            color: rgb(255, 255, 255);
         }
 
         #dropdown {
@@ -225,7 +252,7 @@
             pointer-events: none;
             box-shadow: none;
         }
-        .leaflet-basemap-pane-pane{
+        .leaflet-pane{
             opacity: 1;
             transition: opacity 500ms;
         }
@@ -282,8 +309,9 @@
                         map.setMaxZoom(21);
                         map.setMinZoom(17);
                         map.getPane('basemap-pane').style.zIndex = 250;
-                        map.getPane('basemap-pane').style.opacity = 1;
                         map.getPane('overdata-pane').style.zIndex = 200;
+                        map.getPane('basemap-pane').style.opacity = 1;
+                        map.getPane('overdata-pane').style.opacity = 0;
                         document.getElementById('leaflet-refresh-container').style.display = 'none';
                         document.getElementById('leaflet-basemap-toggle-container').style.display = 'block';
                         map.getPane('click-pane').style.display = 'block';
@@ -295,10 +323,11 @@
                         map.setMaxZoom(23);
                         map.setMinZoom(21);
                         map.getPane('basemap-pane').style.zIndex = 200;
+                        map.getPane('overdata-pane').style.zIndex = 250;
                         setTimeout(function() {
                             map.getPane('basemap-pane').style.opacity = 0;
+                            map.getPane('overdata-pane').style.opacity = 1;
                         }, 1000);
-                        map.getPane('overdata-pane').style.zIndex = 250;
                         document.getElementById('leaflet-refresh-container').style.display = 'block';
                         document.getElementById('leaflet-basemap-toggle-container').style.display = 'none';
                         map.getPane('click-pane').style.display = 'none';
@@ -310,10 +339,11 @@
                         map.setMaxZoom(23);
                         map.setMinZoom(21);
                         map.getPane('basemap-pane').style.zIndex = 200;
+                        map.getPane('overdata-pane').style.zIndex = 250;
                         setTimeout(function() {
                             map.getPane('basemap-pane').style.opacity = 0;
+                            map.getPane('overdata-pane').style.opacity = 1;
                         }, 1000);
-                        map.getPane('overdata-pane').style.zIndex = 250;
                         document.getElementById('leaflet-refresh-container').style.display = 'block';
                         document.getElementById('leaflet-basemap-toggle-container').style.display = 'none';
                         map.getPane('click-pane').style.display = 'none';
@@ -407,21 +437,39 @@
                             onEachFeature: onEachFeature,
                             pane: 'click-pane'
                         }).addTo(map);
+                        Object.values(over._layers).forEach((v) => {
+                            v.bindTooltipDelayed(v.feature.properties.Name, 
+                            {
+                                sticky: true,
+                                className: 'leaflet-textTitle' 
+                            });
+                        });
                     });
-                    L.tileLayer(OPAtileLayer, {
-                        maxZoom: 23,
-                        minZoom: 17,
-                        tms: true,
-                        attribution: attribution,
-                        pane: 'overdata-pane'
-                    }).addTo(map);
-                    L.tileLayer(OPBtileLayer, {
-                        maxZoom: 23,
-                        minZoom: 17,
-                        tms: true,
-                        attribution: attribution,
-                        pane: 'overdata-pane'
-                    }).addTo(map);
+                    operationTiles.forEach((t) => {
+                        L.tileLayer(t, {
+                            maxZoom: 23,
+                            minZoom: 17,
+                            tms: true,
+                            attribution: attribution,
+                            pane: 'overdata-pane'
+                        }).addTo(map);
+                    })
+                    shp(operationShps.replaceAll('.shp', '')).then(function (out) {
+                        var over = L.geoJSON(out, {
+                            style: styleTransparent,
+                            onEachFeature: onEachFeature, //UPDATE onEachFeature to differentiate different clickable layers
+                            pane: 'overdata-pane'
+                        }).addTo(map);
+                        console.log(over);
+                        Object.values(over._layers).forEach((v) => {
+                            v.bindTooltipDelayed(v.feature.properties.Name, 
+                            {
+                                sticky: true,
+                                className: 'leaflet-textTitle' 
+                            });
+                        });
+                    });
+                    
                 }
             },
             get iteration() {
@@ -569,7 +617,7 @@
                     out.closeTooltip();
                 }
                 function startTimer (e) {
-                    this.timer = setTimeout(function() {}, 1000);
+                    this.timer = setTimeout(function() {}, 500);
                 }
                 function hoverTimer (e) {
                     var lat_lang = e.latlng;
@@ -578,734 +626,736 @@
                     var out = this;
                     this.timer = setTimeout(function() {
                         out.bindTooltip(out._tooltip._content).openTooltip(lat_lang);
-                    }, 1000);
+                    }, 500);
                 }
             }
         });
 
-//FUNCTIONS THAT CREATE AND RUN THE SANCTUARY OF THE GREAT GODS SAMOTHRACE INTERACTIVE MAP PLAN
-//Jared Gingrich 2023
+        //FUNCTIONS THAT CREATE AND RUN THE SANCTUARY OF THE GREAT GODS SAMOTHRACE INTERACTIVE MAP PLAN
+        //Jared Gingrich 2023
 
-//update initial inputs for layers, groupings, urls, etc.
-function updateInputs() {
-    groups = [["Elevation Model", "DEM"], ["Magnetometry", "MAG"]];
-    tileLayers = ['https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapTiles/DEM/{z}/{x}/{y}.png',
-    'https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapTiles/MAG/{z}/{x}/{y}.png'];
-    baseshps = 'https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/QR_Operations.shp';
-    OPAtileLayer = 'https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapTiles/OpA/{z}/{x}/{y}.png';
-    OPBtileLayer = 'https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapTiles/OpB/{z}/{x}/{y}.png';
-    attribution = 'JAG2023 | <a href="https://scholarblogs.emory.edu/rliim/">Rural Landscapes of Iron Age Imperial Mesopotamia';
-    shpLayers = ['https://cdn.rawgit.com/jagingrich/samo_website/main/Data/mapFeatures/SamoWeb_RestoredStatePlan_Overlay.shp',
-        'https://cdn.rawgit.com/jagingrich/samo_website/main/Data/mapFeatures/SamoWeb_ActualStatePlan_Overlay.shp'];
+        //update initial inputs for layers, groupings, urls, etc.
+        function updateInputs() {
+            groups = [["Elevation Model", "DEM"], ["Magnetometry", "MAG"]];
+            tileLayers = ['https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapTiles/DEM/{z}/{x}/{y}.png',
+            'https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapTiles/MAG/{z}/{x}/{y}.png'];
+            baseshps = 'https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/QR_Operations.shp';
+            operationShps = 'https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/OpA_Contexts.shp';
+            operationTiles = ['https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapTiles/OpA/{z}/{x}/{y}.png',
+            'https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapTiles/OpB/{z}/{x}/{y}.png'];
+            attribution = 'JAG2023 | <a href="https://scholarblogs.emory.edu/rliim/">Rural Landscapes of Iron Age Imperial Mesopotamia';
+            shpLayers = ['https://cdn.rawgit.com/jagingrich/samo_website/main/Data/mapFeatures/SamoWeb_RestoredStatePlan_Overlay.shp',
+                'https://cdn.rawgit.com/jagingrich/samo_website/main/Data/mapFeatures/SamoWeb_ActualStatePlan_Overlay.shp'];
 
-    dropdownName = 'dropdown-contents';
-    //setting description creation vars
-    url = 'https://raw.githubusercontent.com/jagingrich/samo_website/main/Data/mapDescriptions/';
-    defaultWebID = '(0)Introduction';
-    dropdownDefault = ['<option value="' + defaultWebID + '" disabled selected hidden>Select Monument</option>',
-    '<option value="' + defaultWebID + '">About: Interactive Plan</option>'];
-    remove = ['JAG_UNEDITED', 'Glennon'];
-    replace = [['Bibliography:', 'Bibliography: Selected Bibliography']];
-}
+            dropdownName = 'dropdown-contents';
+            //setting description creation vars
+            url = 'https://raw.githubusercontent.com/jagingrich/samo_website/main/Data/mapDescriptions/';
+            defaultWebID = '(0)Introduction';
+            dropdownDefault = ['<option value="' + defaultWebID + '" disabled selected hidden>Select Monument</option>',
+            '<option value="' + defaultWebID + '">About: Interactive Plan</option>'];
+            remove = ['JAG_UNEDITED', 'Glennon'];
+            replace = [['Bibliography:', 'Bibliography: Selected Bibliography']];
+        }
 
-//creating divs for parts of interactive plan in map, overlay divs
-function divCreate(divName, divContainer, type = 'div', functionOnCreate = null) {
-    L.Control.newDiv = L.Control.extend({
-        addTo: function (placeholder) {
-            // Attach new div to input container
-            var container = L.DomUtil.get(placeholder);
-            var newDiv = L.DomUtil.create(type, divName, container);
-            L.DomEvent.disableClickPropagation(newDiv);
-            newDiv.id = divName;
+        //creating divs for parts of interactive plan in map, overlay divs
+        function divCreate(divName, divContainer, type = 'div', functionOnCreate = null) {
+            L.Control.newDiv = L.Control.extend({
+                addTo: function (placeholder) {
+                    // Attach new div to input container
+                    var container = L.DomUtil.get(placeholder);
+                    var newDiv = L.DomUtil.create(type, divName, container);
+                    L.DomEvent.disableClickPropagation(newDiv);
+                    newDiv.id = divName;
 
-            if (functionOnCreate != null && typeof (functionOnCreate) == 'function') {
-                functionOnCreate(newDiv);
-            }           
+                    if (functionOnCreate != null && typeof (functionOnCreate) == 'function') {
+                        functionOnCreate(newDiv);
+                    }           
 
-            return this;
-        },
-        onRemove: function (placeholder) { }
-    });
-    var outDiv = new L.Control.newDiv();
-    outDiv.addTo(divContainer);
-}
+                    return this;
+                },
+                onRemove: function (placeholder) { }
+            });
+            var outDiv = new L.Control.newDiv();
+            outDiv.addTo(divContainer);
+        }
 
-//formatting for tile layers
-function tileLayer(url, setAttribution = false) {
-    if (setAttribution) {
-        return L.tileLayer(url, {
-            maxZoom: 22,
-            minZoom: 17,
-            tms: true,
-            attribution: attribution,
-            pane: 'basemap-pane'
-        });
-    } else {
-        return L.tileLayer(url, {
-            maxZoom: 22,
-            minZoom: 17,
-            tms: true,
-            pane: 'basemap-pane'
-        });
-    }
-}
-
-//formatting for json overlay layers
-function jsonLayer(json) {
-    return L.geoJSON(json, {
-        style: styleTransparent,
-        onEachFeature: onEachFeature
-    });
-}
-
-//transparent overlay layer style
-function styleTransparent() {
-    return {
-        fillColor: '#00000000',
-        weight: 2,
-        opacity: 0.85,
-        color: '#FFF',
-        fillOpacity: 0
-    }
-}
-
-//mouseover highlight behavior and highlight reset
-function highlightFeature(e) {
-    e.target.setStyle({
-        fillColor: '#FFF',
-        weight: 2.5,
-        opacity: 1,
-        color: '#FFF',
-        dashArray: '',
-        fillOpacity: 0.25
-    });
-
-    if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
-        e.target.bringToFront();
-    }
-}
-
-//this is the reset
-function resetHighlight(e) {
-    e.target.setStyle(styleTransparent());
-}
-
-//zoom to feature from given code
-function zoomToFeature(features, webCode) {
-    if (webCode != defaultWebID) {
-        //select objects
-        var selected = [];
-        features.forEach(function (f) {
-            if (f.properties.WebCode == webCode) {
-                selected.push(L.geoJSON(f));
+        //formatting for tile layers
+        function tileLayer(url, setAttribution = false) {
+            if (setAttribution) {
+                return L.tileLayer(url, {
+                    maxZoom: 22,
+                    minZoom: 17,
+                    tms: true,
+                    attribution: attribution,
+                    pane: 'basemap-pane'
+                });
+            } else {
+                return L.tileLayer(url, {
+                    maxZoom: 22,
+                    minZoom: 17,
+                    tms: true,
+                    pane: 'basemap-pane'
+                });
             }
-        });
+        }
 
-        //zoom to bounds
-        map.flyToBounds(L.featureGroup(selected).getBounds());
-    }
-    else {
-        //zoom to all map bounds
-        map.flyToBounds(mapbounds);
-    }
-}
+        //formatting for json overlay layers
+        function jsonLayer(json) {
+            return L.geoJSON(json, {
+                style: styleTransparent,
+                onEachFeature: onEachFeature
+            });
+        }
 
-//selecting feature: click or dropdown
-function selectFeature(webCode) {
-    //update text and dropdown
-    //updateText(webCode);
-
-    //zoom to selection
-    //console.log(webCode.target.getBounds());
-    state.bounds = webCode.target.getBounds();
-    map.setMaxBounds(webCode.target.getBounds());
-    state.select = webCode.target.feature.properties.WebCode;
-    //zoomToFeature(getAllFeatures(null, control), webCode);
-}
-
-//layer responsiveness
-function onEachFeature(feature, layer) {
-    layer.on({
-        mouseover: highlightFeature,
-        mouseout: resetHighlight,
-        click: (e, event) => selectFeature(e)
-    });
-}
-
-//on changing dropdown selection
-function onSelect() {
-    var dropdown = document.getElementById(dropdownName);
-    var index = dropdown.options.selectedIndex;
-    if (dropdown[index].value == defaultWebID) {
-        selectFeature(defaultWebID)
-    } else {
-        selectFeature(dropdown[index].value);
-    }
-}
-
-//updating text and dropdown selection
-function updateText(webCode) {
-    //update text output code
-    webID = webCode;
-    updateOutput(sidebarText, webID);
-    document.getElementById(sidebarText).innerHTML = document.getElementById(sidebarText).innerHTML.replaceAll('width="400px"', width);
-
-    //update dropdown
-    if (document.getElementById(dropdownName)) {
-        var dropdown = document.getElementById(dropdownName);
-        dropdown.value = webID;
-    }
-}
-
-//finding all features in map
-function getAllFeatures(inputMap = null, layerControl = null) {
-    var feats = [];
-    if (inputMap != null && typeof (inputMap) == 'object') {
-        Object.values(inputMap._layers).forEach(function (l) {
-            var keys = Object.keys(l);
-            if (keys.includes('feature') && !feats.includes(l.feature)) {
-                feats.push(l.feature)
+        //transparent overlay layer style
+        function styleTransparent() {
+            return {
+                fillColor: '#00000000',
+                weight: 2,
+                opacity: 0.85,
+                color: '#FFF',
+                fillOpacity: 0
             }
-        });
-    }
-    if (layerControl != null && typeof (layerControl) == 'object') {
-        layerControl['_layers'].forEach(function (c) {
-            Object.values(c.layer._layers).forEach(function (l) {
-                var keys = Object.keys(l);
-                if (keys.includes('_layers')) {
-                    Object.values(l['_layers']).forEach(function (f) {
-                        if (!feats.includes(f.feature)) {
-                            feats.push(f.feature)
+        }
+
+        //mouseover highlight behavior and highlight reset
+        function highlightFeature(e) {
+            e.target.setStyle({
+                fillColor: '#FFF',
+                weight: 2.5,
+                opacity: 1,
+                color: '#FFF',
+                dashArray: '',
+                fillOpacity: 0.25
+            });
+
+            if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+                e.target.bringToFront();
+            }
+        }
+
+        //this is the reset
+        function resetHighlight(e) {
+            e.target.setStyle(styleTransparent());
+        }
+
+        //zoom to feature from given code
+        function zoomToFeature(features, webCode) {
+            if (webCode != defaultWebID) {
+                //select objects
+                var selected = [];
+                features.forEach(function (f) {
+                    if (f.properties.WebCode == webCode) {
+                        selected.push(L.geoJSON(f));
+                    }
+                });
+
+                //zoom to bounds
+                map.flyToBounds(L.featureGroup(selected).getBounds());
+            }
+            else {
+                //zoom to all map bounds
+                map.flyToBounds(mapbounds);
+            }
+        }
+
+        //selecting feature: click or dropdown
+        function selectFeature(webCode) {
+            //update text and dropdown
+            //updateText(webCode);
+
+            //zoom to selection
+            //console.log(webCode.target.getBounds());
+            state.bounds = webCode.target.getBounds();
+            map.setMaxBounds(webCode.target.getBounds());
+            state.select = webCode.target.feature.properties.WebCode;
+            //zoomToFeature(getAllFeatures(null, control), webCode);
+        }
+
+        //layer responsiveness
+        function onEachFeature(feature, layer) {
+            layer.on({
+                mouseover: highlightFeature,
+                mouseout: resetHighlight,
+                click: (e, event) => selectFeature(e)
+            });
+        }
+
+        //on changing dropdown selection
+        function onSelect() {
+            var dropdown = document.getElementById(dropdownName);
+            var index = dropdown.options.selectedIndex;
+            if (dropdown[index].value == defaultWebID) {
+                selectFeature(defaultWebID)
+            } else {
+                selectFeature(dropdown[index].value);
+            }
+        }
+
+        //updating text and dropdown selection
+        function updateText(webCode) {
+            //update text output code
+            webID = webCode;
+            updateOutput(sidebarText, webID);
+            updateWidth();
+
+            //update dropdown
+            if (document.getElementById(dropdownName)) {
+                var dropdown = document.getElementById(dropdownName);
+                dropdown.value = webID;
+            }
+        }
+
+        //finding all features in map
+        function getAllFeatures(inputMap = null, layerControl = null) {
+            var feats = [];
+            if (inputMap != null && typeof (inputMap) == 'object') {
+                Object.values(inputMap._layers).forEach(function (l) {
+                    var keys = Object.keys(l);
+                    if (keys.includes('feature') && !feats.includes(l.feature)) {
+                        feats.push(l.feature)
+                    }
+                });
+            }
+            if (layerControl != null && typeof (layerControl) == 'object') {
+                layerControl['_layers'].forEach(function (c) {
+                    Object.values(c.layer._layers).forEach(function (l) {
+                        var keys = Object.keys(l);
+                        if (keys.includes('_layers')) {
+                            Object.values(l['_layers']).forEach(function (f) {
+                                if (!feats.includes(f.feature)) {
+                                    feats.push(f.feature)
+                                }
+                            });
                         }
                     });
+                });
+            }
+            return feats;
+        }
+
+        //layer groups from names and keywords
+        function generateLayerGroups({ groups = [[groupName = null, keyword = null]] }) {
+            var laygroups = []
+            groups.forEach(function (g) {
+                laygroups.push({ name: g[0], keyword: g[1], layers: L.layerGroup() });
+            });
+            laygroups.push({ name: 'Other', keyword: 'Missing', layers: L.layerGroup() });
+            return laygroups;
+        }
+
+        function addLayerGroups(mapInput, layerControl, layers, groups, functionOnLoad = null) {
+            //type of layers
+            var tiles = [];
+            var shps = [];
+            layers.forEach(function (l) {
+                if (typeof (l) == 'string' && l.match('{z}/{x}/{y}.png') != null) {
+                    tiles.push(l);
+                }
+                if (typeof (l) == 'object' && l.type == "FeatureCollection") {
+                    shps.push(l);
                 }
             });
-        });
-    }
-    return feats;
-}
 
-//layer groups from names and keywords
-function generateLayerGroups({ groups = [[groupName = null, keyword = null]] }) {
-    var laygroups = []
-    groups.forEach(function (g) {
-        laygroups.push({ name: g[0], keyword: g[1], layers: L.layerGroup() });
-    });
-    laygroups.push({ name: 'Other', keyword: 'Missing', layers: L.layerGroup() });
-    return laygroups;
-}
-
-function addLayerGroups(mapInput, layerControl, layers, groups, functionOnLoad = null) {
-    //type of layers
-    var tiles = [];
-    var shps = [];
-    layers.forEach(function (l) {
-        if (typeof (l) == 'string' && l.match('{z}/{x}/{y}.png') != null) {
-            tiles.push(l);
-        }
-        if (typeof (l) == 'object' && l.type == "FeatureCollection") {
-            shps.push(l);
-        }
-    });
-
-    //add layerGroups to map
-    function addLayers(mapInput, layerGroups, layerControl) {
-        var count = 0;
-        if (layerControl != null) {
-            groups.forEach(function (g) {
-                if (g.name != 'Other') {
-                    if (count == 0) {
-                        layerControl.addBaseLayer(g.layers.addTo(mapInput), g.name);
-                        count++;
-                    }
-                    else {
-                        layerControl.addBaseLayer(g.layers, g.name);
-                    }
-                }
-                if (g.name == 'Other') {
-                    g.layers.addTo(mapInput);
-                }
-            })
-        } else {
-            groups.forEach(function (g) {
-                g.layers.addTo(mapInput);
-            })
-        }
-    }
-
-    //tile layers to groups
-    tiles.forEach(function (t) {
-        var match = false;
-        groups.forEach(function (g) {
-            if (g.name != 'Other') {
-                if (t.match(g.keyword) != null) {
-                    tileLayer(t, true).addTo(g.layers);
-                    match = true;
+            //add layerGroups to map
+            function addLayers(mapInput, layerGroups, layerControl) {
+                var count = 0;
+                if (layerControl != null) {
+                    groups.forEach(function (g) {
+                        if (g.name != 'Other') {
+                            if (count == 0) {
+                                layerControl.addBaseLayer(g.layers.addTo(mapInput), g.name);
+                                count++;
+                            }
+                            else {
+                                layerControl.addBaseLayer(g.layers, g.name);
+                            }
+                        }
+                        if (g.name == 'Other') {
+                            g.layers.addTo(mapInput);
+                        }
+                    })
+                } else {
+                    groups.forEach(function (g) {
+                        g.layers.addTo(mapInput);
+                    })
                 }
             }
-            if (g.name == 'Other') {
-                out = t;
-                groups.forEach((gs) => {
-                    if (gs.keyword != 'Missing') {
-                        if (t.match(gs.keyword) != null) {
-                            out = null;
+
+            //tile layers to groups
+            tiles.forEach(function (t) {
+                var match = false;
+                groups.forEach(function (g) {
+                    if (g.name != 'Other') {
+                        if (t.match(g.keyword) != null) {
+                            tileLayer(t, true).addTo(g.layers);
+                            match = true;
+                        }
+                    }
+                    if (g.name == 'Other') {
+                        out = t;
+                        groups.forEach((gs) => {
+                            if (gs.keyword != 'Missing') {
+                                if (t.match(gs.keyword) != null) {
+                                    out = null;
+                                }
+                            }
+                        });
+                        if (out != null) {
+                            tileLayer(t, true).addTo(map);
                         }
                     }
                 });
-                if (out != null) {
-                    tileLayer(t, true).addTo(map);
+                if (!match) {
+                    tileLayer(t, true).addTo(groups[groups.findIndex((element) => element.name == "Other")].layers)
                 }
-            }
-        });
-        if (!match) {
-            tileLayer(t, true).addTo(groups[groups.findIndex((element) => element.name == "Other")].layers)
-        }
-        layersCount++;
-        updateProgress(tileLayers.length + shpFiles.length + 1);
-    });
+                layersCount++;
+                updateProgress(tileLayers.length + shpFiles.length + 1);
+            });
 
-    //shp layers to groups
-    shps.forEach(function (s) {
-        var match = false;
-        groups.forEach(function (g) {
-            if (g.name != 'Other') {
-                if (s.name.match(g.keyword) != null) {
-                    //jsonLayer(s).addTo(g.layers);
-                    match = true;
+            //shp layers to groups
+            shps.forEach(function (s) {
+                var match = false;
+                groups.forEach(function (g) {
+                    if (g.name != 'Other') {
+                        if (s.name.match(g.keyword) != null) {
+                            //jsonLayer(s).addTo(g.layers);
+                            match = true;
+                        }
+                    }
+                });
+                if (!match) {
+                    //jsonLayer(s).addTo(groups[groups.findIndex((element) => element.name == "Other")].layers)
                 }
+                layersCount++;
+                updateProgress(tileLayers.length + shpFiles.length + 1);
+            });
+            addLayers(mapInput, groups, layerControl);
+
+            if (functionOnLoad != null && typeof (functionOnLoad) == 'function') {
+                functionOnLoad();
             }
-        });
-        if (!match) {
-            //jsonLayer(s).addTo(groups[groups.findIndex((element) => element.name == "Other")].layers)
-        }
-        layersCount++;
-        updateProgress(tileLayers.length + shpFiles.length + 1);
-    });
-    addLayers(mapInput, groups, layerControl);
-
-    if (functionOnLoad != null && typeof (functionOnLoad) == 'function') {
-        functionOnLoad();
-    }
-}
-
-//ajax request for SHPfile data
-function readSHPs(url) {
-    url = url.replaceAll('.shp', '');
-    $.ajax({
-        url: url + '.shp',
-        type: "head",
-        success: function () {
-            shp(url).then(function (out) {
-                out.name = url.split('/')[url.split('/').length - 1];
-                out.features.forEach((f) => f.properties.fullName = '(' + f.properties.Label + ') ' + f.properties.Name);
-                shpFiles.push(out);
-                layerCounter.iteration++;
-            });
-        },
-        error: function () {
-            layerCounter.iteration++;
-        }
-    });
-}
-
-//creating legend
-function addLegend() {
-    var legend = L.control({ position: 'bottomleft' });
-    legend.onAdd = function (map) {
-
-        var div = L.DomUtil.create('div', 'info legend'),
-            grades = [1, 2, 3, 4, 5, 6],
-            labels = ['Late fifth to early fourth century BCE',
-                'Late fourth century BCE',
-                'Third century BCE',
-                'Second to first century BCE',
-                'First to second century CE',
-                'Post Antique'];
-
-        for (var i = 0; i < grades.length; i++) {
-            div.innerHTML +=
-                '<i style="background:' + getColor(grades[i]) + '"></i> ' + labels[i] + '<br>';
         }
 
-        return div;
-    };
-
-    //phasing and legend colors
-    function getColor(d) {
-        return d == "1" ? '#94d1e7' :
-            d == "2" ? '#007abc' :
-            d == "3" ? '#00a33c' :
-            d == "4" ? '#ff871f' :
-            d == "5" ? '#ff171F' :
-            d == "6" ? '#fdf500' :
-                       '#00000000';
-    }
-
-    legend.addTo(map);
-}
-
-//creating refresh button control
-function addRefresh() {
-    L.Control.Button = L.Control.extend({
-        options: {
-            position: 'topright'
-        },
-        onAdd: function (map) {
-            var container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
-            var button = L.DomUtil.create('a', 'leaflet-control-button', container);
-            L.DomEvent.disableClickPropagation(button);
-            L.DomEvent.on(button, 'click', function () {
-                state.bounds = mapbounds;
-                map.setMaxBounds(mapbounds);
-                state.select = "QR";
+        //ajax request for SHPfile data
+        function readSHPs(url) {
+            url = url.replaceAll('.shp', '');
+            $.ajax({
+                url: url + '.shp',
+                type: "head",
+                success: function () {
+                    shp(url).then(function (out) {
+                        out.name = url.split('/')[url.split('/').length - 1];
+                        out.features.forEach((f) => f.properties.fullName = '(' + f.properties.Label + ') ' + f.properties.Name);
+                        shpFiles.push(out);
+                        layerCounter.iteration++;
+                    });
+                },
+                error: function () {
+                    layerCounter.iteration++;
+                }
             });
+        }
 
-            container.id = "leaflet-refresh-container";
-            button.id = "leaflet-refresh-button";
-            button.title = "Zoom Out to Site Map";
-            button.innerHTML = 'View Site';
+        //creating legend
+        function addLegend() {
+            var legend = L.control({ position: 'bottomleft' });
+            legend.onAdd = function (map) {
 
-            return container;
-        },
-        onRemove: function (map) { },
-    });
-    var control = new L.Control.Button();
-    control.addTo(map);
-}
+                var div = L.DomUtil.create('div', 'info legend'),
+                    grades = [1, 2, 3, 4, 5, 6],
+                    labels = ['Late fifth to early fourth century BCE',
+                        'Late fourth century BCE',
+                        'Third century BCE',
+                        'Second to first century BCE',
+                        'First to second century CE',
+                        'Post Antique'];
 
-//creating recenter button control
-function addRecenterControl() {
-    leaflet.Control.Recenter = leaflet.Control.extend({
-        options: {
-            position: 'topleft',
-            title: 'Recenter'
-        },
-        _createButton: function (title, className, content, container, context) {
-            this.link = leaflet.DomUtil.create('a', className, container);
-            this.link.href = '#';
-            this.link.title = title;
-            this.link.innerHTML = content;
+                for (var i = 0; i < grades.length; i++) {
+                    div.innerHTML +=
+                        '<i style="background:' + getColor(grades[i]) + '"></i> ' + labels[i] + '<br>';
+                }
 
-            this.link.setAttribute('role', 'button');
-            this.link.setAttribute('aria-label', title);
+                return div;
+            };
 
-            L.DomEvent.disableClickPropagation(container);
-
-            L.DomEvent.on(this.link, 'click', function () {
-                map.flyToBounds(state.bounds);
-            });
-
-            return this.link;
-        },
-
-        onAdd: function (map) {
-            var className = 'leaflet-control-zoom-selection', container, content = '';
-
-            container = map.zoomControl._container;
-
-            if (this.options.content) {
-                content = this.options.content;
-            } else {
-                className += ' recenter-icon';
+            //phasing and legend colors
+            function getColor(d) {
+                return d == "1" ? '#94d1e7' :
+                    d == "2" ? '#007abc' :
+                    d == "3" ? '#00a33c' :
+                    d == "4" ? '#ff871f' :
+                    d == "5" ? '#ff171F' :
+                    d == "6" ? '#fdf500' :
+                            '#00000000';
             }
 
-            this._createButton(this.options.title, className, content, container, this);
-            this._map.recenter = this;
-
-            return container;
+            legend.addTo(map);
         }
-    })
-    var zoomTo = new L.Control.Recenter();
-    zoomTo.addTo(map);
-}
 
-//creating listener for screen width change & update accordingly
-function roundWidth() {
-    const q = window.innerWidth;
-    const tops = Array.from(document.getElementsByClassName('leaflet-top'));
-    var topWidth = 10 * tops.length;
-    tops.forEach((f) => topWidth += f.clientWidth);
-    if (window.innerWidth < window.innerHeight) {
-        return [q, q - 40, q, q - 40];
-    }
-    else {
-        return q < 750 ? [q, q - 40, q, q - 40] :
-               q < 900 ? [405, 365, q - 405, q - 405 - topWidth] :
-               q < 1050 ? [475, 435, q - 475, q - 475 - topWidth] :
-               q < 1200 ? [540, 500, q - 540, q - 540 - topWidth] :
-               q < 1350 ? [600, 560, q - 600, q - 600 - topWidth] :
-                          [655, 615, q - 655, q - 655 - topWidth];
-    }
-}
+        //creating refresh button control
+        function addRefresh() {
+            L.Control.Button = L.Control.extend({
+                options: {
+                    position: 'topright'
+                },
+                onAdd: function (map) {
+                    var container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+                    var button = L.DomUtil.create('a', 'leaflet-control-button', container);
+                    L.DomEvent.disableClickPropagation(button);
+                    L.DomEvent.on(button, 'click', function () {
+                        state.bounds = mapbounds;
+                        map.setMaxBounds(mapbounds);
+                        state.select = "QR";
+                    });
 
-function updateWidth() {
-    var oldWidth = width;
-    var w = roundWidth();
-    width = 'width="' + w[1] + 'px"'; 
-    if (_sidebar.side == 'left') {
-        document.getElementById('map').style.left = w[0] + 'px';
-    }
-    document.getElementById('map').style.width = w[2] + 'px';
-    document.getElementById('sidebar-' + _sidebar.side).style.width = w[0] + 'px';
-    if (document.getElementById(sidebarText)) {
-        document.getElementById(sidebarText).innerHTML = document.getElementById(sidebarText).innerHTML.replaceAll('width="400px"', width);
-        document.getElementById(sidebarText).innerHTML = document.getElementById(sidebarText).innerHTML.replaceAll(oldWidth, width);
-    }
-    if (document.getElementById('dropdown-contents')) {
-        document.getElementById('dropdown-contents').style.width = w[3] + 'px';
-    }
-}
+                    container.id = "leaflet-refresh-container";
+                    button.id = "leaflet-refresh-button";
+                    button.title = "Zoom Out to Site Map";
+                    button.innerHTML = 'View Site';
 
-//function for unique features from JSON input
-function uniqueFeatures(features, id, sort = null, sortType = 'Number') {
-    var feats = [];
-    var ids = [];
-    features.forEach(function (f) {
-        if (!ids.includes(f.properties[id])) {
-            feats.push(f);
-            ids.push(f.properties[id])
+                    return container;
+                },
+                onRemove: function (map) { },
+            });
+            var control = new L.Control.Button();
+            control.addTo(map);
         }
-    });
-    if (sort != null) {
-        function fixSortKey(input) {
-            switch (sortType) {
-                case 'Number':
-                    var out = input;
-                    out = out.split("-")[0];
-                    out = out.replace("a", ".2");
-                    out = out.replace("b", ".5");
-                    return Number(out);
-                case 'String':
-                    return String(input);
+
+        //creating recenter button control
+        function addRecenterControl() {
+            leaflet.Control.Recenter = leaflet.Control.extend({
+                options: {
+                    position: 'topleft',
+                    title: 'Recenter'
+                },
+                _createButton: function (title, className, content, container, context) {
+                    this.link = leaflet.DomUtil.create('a', className, container);
+                    this.link.href = '#';
+                    this.link.title = title;
+                    this.link.innerHTML = content;
+
+                    this.link.setAttribute('role', 'button');
+                    this.link.setAttribute('aria-label', title);
+
+                    L.DomEvent.disableClickPropagation(container);
+
+                    L.DomEvent.on(this.link, 'click', function () {
+                        map.flyToBounds(state.bounds);
+                    });
+
+                    return this.link;
+                },
+
+                onAdd: function (map) {
+                    var className = 'leaflet-control-zoom-selection', container, content = '';
+
+                    container = map.zoomControl._container;
+
+                    if (this.options.content) {
+                        content = this.options.content;
+                    } else {
+                        className += ' recenter-icon';
+                    }
+
+                    this._createButton(this.options.title, className, content, container, this);
+                    this._map.recenter = this;
+
+                    return container;
+                }
+            })
+            var zoomTo = new L.Control.Recenter();
+            zoomTo.addTo(map);
+        }
+
+        //creating listener for screen width change & update accordingly
+        function roundWidth() {
+            const q = window.innerWidth;
+            const tops = Array.from(document.getElementsByClassName('leaflet-top'));
+            var topWidth = 10 * tops.length;
+            tops.forEach((f) => topWidth += f.clientWidth);
+            if (window.innerWidth < window.innerHeight) {
+                return [q, q - 40, q, q - 40];
+            }
+            else {
+                return q < 750 ? [q, q - 40, q, q - 40] :
+                    q < 900 ? [305, 265, q - 305, q - 305 - topWidth] :
+                    q < 1050 ? [375, 335, q - 375, q - 375 - topWidth] :
+                    q < 1200 ? [440, 400, q - 440, q - 440 - topWidth] :
+                    q < 1350 ? [500, 460, q - 500, q - 500 - topWidth] :
+                                [555, 515, q - 555, q - 555 - topWidth];
+            }
+        }
+
+        function updateWidth() {
+            var oldWidth = width;
+            var w = roundWidth();
+            width = 'width="' + w[1] + 'px"'; 
+            if (_sidebar.side == 'left') {
+                document.getElementById('map').style.left = w[0] + 'px';
+            }
+            document.getElementById('map').style.width = w[2] + 'px';
+            document.getElementById('sidebar-' + _sidebar.side).style.width = w[0] + 'px';
+            if (document.getElementById(sidebarText)) {
+                document.getElementById(sidebarText).innerHTML = document.getElementById(sidebarText).innerHTML.replaceAll('width="400px"', width);
+                document.getElementById(sidebarText).innerHTML = document.getElementById(sidebarText).innerHTML.replaceAll(oldWidth, width);
+            }
+            if (document.getElementById('dropdown-contents')) {
+                document.getElementById('dropdown-contents').style.width = w[3] + 'px';
+            }
+        }
+
+        //function for unique features from JSON input
+        function uniqueFeatures(features, id, sort = null, sortType = 'Number') {
+            var feats = [];
+            var ids = [];
+            features.forEach(function (f) {
+                if (!ids.includes(f.properties[id])) {
+                    feats.push(f);
+                    ids.push(f.properties[id])
+                }
+            });
+            if (sort != null) {
+                function fixSortKey(input) {
+                    switch (sortType) {
+                        case 'Number':
+                            var out = input;
+                            out = out.split("-")[0];
+                            out = out.replace("a", ".2");
+                            out = out.replace("b", ".5");
+                            return Number(out);
+                        case 'String':
+                            return String(input);
+                        default:
+                            return input;
+                    }
+                }
+                feats.sort(function (a, b) {
+                    var keyA = fixSortKey(a.properties[sort]);
+                    var keyB = fixSortKey(b.properties[sort]);
+                    if (keyA < keyB) return -1;
+                    if (keyA > keyB) return 1;
+                    return 0;
+                });
+            }
+            return feats;
+        }
+
+        //generating dropdown menu options from JSON inputs
+        function dropdownOptions(inputs, value, text) {
+            var optionsOut = [];
+            inputs.forEach((f) => optionsOut.push('<option value="' + f.properties[value] + '">' + f.properties[text] + '</option>'))
+            return optionsOut;
+        }
+
+        //html formating for text strings
+        function textHTMLOutput(text, { size = 16, bold = false, italics = false, paragraph = 'paragraph', linebreak = true } = {}) {
+            var input = text;
+            var head = '<text style="font-size:' + size + 'px;">';
+            var foot = '</text><br>';
+            if (bold == true) {//html for bold
+                head += '<b>';
+                foot = '</b>' + foot;
+            }
+            if (italics == true) {//html for italics
+                head += '<i>';
+                foot = '</i>' + foot;
+            }
+            if (linebreak == true) {//adding an additional linebreak
+                foot += '<br>';
+            }
+            switch (paragraph) {//paragraph styling
+                case 'indent':
+                    head = '<div style="text-indent: 36px;">' + head;
+                    foot += '</div>'
+                    break;
+                case 'hanging':
+                    head = '<div style="text-indent: -36px; padding-left: 36px;">' + head;
+                    foot += '</div>'
+                    break;
                 default:
-                    return input;
             }
-        }
-        feats.sort(function (a, b) {
-            var keyA = fixSortKey(a.properties[sort]);
-            var keyB = fixSortKey(b.properties[sort]);
-            if (keyA < keyB) return -1;
-            if (keyA > keyB) return 1;
-            return 0;
-        });
-    }
-    return feats;
-}
-
-//generating dropdown menu options from JSON inputs
-function dropdownOptions(inputs, value, text) {
-    var optionsOut = [];
-    inputs.forEach((f) => optionsOut.push('<option value="' + f.properties[value] + '">' + f.properties[text] + '</option>'))
-    return optionsOut;
-}
-
-//html formating for text strings
-function textHTMLOutput(text, { size = 16, bold = false, italics = false, paragraph = 'paragraph', linebreak = true } = {}) {
-    var input = text;
-    var head = '<text style="font-size:' + size + 'px;">';
-    var foot = '</text><br>';
-    if (bold == true) {//html for bold
-        head += '<b>';
-        foot = '</b>' + foot;
-    }
-    if (italics == true) {//html for italics
-        head += '<i>';
-        foot = '</i>' + foot;
-    }
-    if (linebreak == true) {//adding an additional linebreak
-        foot += '<br>';
-    }
-    switch (paragraph) {//paragraph styling
-        case 'indent':
-            head = '<div style="text-indent: 36px;">' + head;
-            foot += '</div>'
-            break;
-        case 'hanging':
-            head = '<div style="text-indent: -36px; padding-left: 36px;">' + head;
-            foot += '</div>'
-            break;
-        default:
-    }
-    return head + input + foot;//output
-}
-
-//formatting text output for sidebar
-function splitTxt(text, { remove = [null], replace = [[keyword = null, replacement = null]]}) {
-    //split input text to individual lines
-    var startText = text.match(/[^\r\n]+/g);
-    var splitText = [];
-
-    //string of keywords to remove
-    var remCat = remove[0];
-    if (remove.length > 1) {
-        for (var c = 1; c < remove.length; c++) {
-            remCat += '|' + remove[c];
-        }
-    }
-
-    //searching each line for replacement keywords, text codes
-    for (var n = 0; n < startText.length; n++) {
-        var newText = startText[n].trim();
-
-        //replacing lines based on replacement keywords
-        for (var r = 0; r < replace.length; r++) {
-            var repSub = replace[r];
-            if (newText.match(repSub[0]) != null) {
-                newText = repSub[1];
-            }
+            return head + input + foot;//output
         }
 
-        //generating line/paragraph codes
-        if (newText.match(remCat) == null) { //removing lines based on removal keywords
-            var txtCode = newText.split(' ')[0];
-            if (txtCode.match(":") != null) {
-                splitText.push([txtCode.replace(':', ''), newText.replace(txtCode, '').trim()]);
-            } else {
-                if (newText.trim().length === 0) {
-                    splitText.push(["Space", newText.trim()]);
-                } else {
-                    splitText.push(["Body", newText.trim()]);
+        //formatting text output for sidebar
+        function splitTxt(text, { remove = [null], replace = [[keyword = null, replacement = null]]}) {
+            //split input text to individual lines
+            var startText = text.match(/[^\r\n]+/g);
+            var splitText = [];
+
+            //string of keywords to remove
+            var remCat = remove[0];
+            if (remove.length > 1) {
+                for (var c = 1; c < remove.length; c++) {
+                    remCat += '|' + remove[c];
                 }
             }
-        }
-    }
-    return splitText;//output
-}
 
-function outText(desc, url, text, { remove = [null], replace = [[keyword = null, replacement = null]] }) {
-    var splitText = splitTxt(text, { remove: remove, replace: replace });
-    var outText = "";
-    var capcount = 0;
-    var defaultSize = 14;
-    var defaultPara = 'paragraph';
-    //formatting each text output based on text code
-    for (var n = 0; n < splitText.length; n++) {
-        var input = splitText[n];
-        var newText = input[1];
-        switch (input[0]) {
-            case 'Title':
-            case 'Monument':
-                newText = textHTMLOutput(newText, {size: 30, bold: true});
-                break;
-            case 'Subheader':
-            case 'Part':
-                newText = textHTMLOutput(newText, {size: 16, bold: true, linebreak: false});
-                break;
-            case 'Header':
-                newText = textHTMLOutput(newText, {size: 24, bold: true, linebreak: false});
-                break;
-            case 'Bibliography':
-                defaultSize = 11;
-                defaultPara = 'hanging';
-                newText = textHTMLOutput(newText, {size: 18, bold: true, linebreak: false});
-                break;
-            case 'Caption':
-                capcount += 1;
-                const capUrl = '<img src="' + url + desc + "/SamoWebsite_" + desc + "_Image" + capcount + ".jpg" + '" ' + 'width="400px"' + ' /><br>';
-                if (newText.length === 0) {
-                    newText = '<br>';
-                } else {
-                    newText = textHTMLOutput(newText, {size: 11});
+            //searching each line for replacement keywords, text codes
+            for (var n = 0; n < startText.length; n++) {
+                var newText = startText[n].trim();
+
+                //replacing lines based on replacement keywords
+                for (var r = 0; r < replace.length; r++) {
+                    var repSub = replace[r];
+                    if (newText.match(repSub[0]) != null) {
+                        newText = repSub[1];
+                    }
                 }
-                newText = capUrl + newText;
-                break;
-            case 'Date':
-            case 'Material':
-            case 'Location':
-                var nextText = splitText[n + 1];
-                switch (nextText[0]) {
+
+                //generating line/paragraph codes
+                if (newText.match(remCat) == null) { //removing lines based on removal keywords
+                    var txtCode = newText.split(' ')[0];
+                    if (txtCode.match(":") != null) {
+                        splitText.push([txtCode.replace(':', ''), newText.replace(txtCode, '').trim()]);
+                    } else {
+                        if (newText.trim().length === 0) {
+                            splitText.push(["Space", newText.trim()]);
+                        } else {
+                            splitText.push(["Body", newText.trim()]);
+                        }
+                    }
+                }
+            }
+            return splitText;//output
+        }
+
+        function outText(desc, url, text, { remove = [null], replace = [[keyword = null, replacement = null]] }) {
+            var splitText = splitTxt(text, { remove: remove, replace: replace });
+            var outText = "";
+            var capcount = 0;
+            var defaultSize = 14;
+            var defaultPara = 'paragraph';
+            //formatting each text output based on text code
+            for (var n = 0; n < splitText.length; n++) {
+                var input = splitText[n];
+                var newText = input[1];
+                switch (input[0]) {
+                    case 'Title':
+                    case 'Monument':
+                        newText = textHTMLOutput(newText, {size: 30, bold: true});
+                        break;
+                    case 'Subheader':
+                    case 'Part':
+                        newText = textHTMLOutput(newText, {size: 16, bold: true, linebreak: false});
+                        break;
+                    case 'Header':
+                        newText = textHTMLOutput(newText, {size: 24, bold: true, linebreak: false});
+                        break;
+                    case 'Bibliography':
+                        defaultSize = 11;
+                        defaultPara = 'hanging';
+                        newText = textHTMLOutput(newText, {size: 18, bold: true, linebreak: false});
+                        break;
+                    case 'Caption':
+                        capcount += 1;
+                        const capUrl = '<img src="' + url + desc + "/SamoWebsite_" + desc + "_Image" + capcount + ".jpg" + '" ' + 'width="400px"' + ' /><br>';
+                        if (newText.length === 0) {
+                            newText = '<br>';
+                        } else {
+                            newText = textHTMLOutput(newText, {size: 11});
+                        }
+                        newText = capUrl + newText;
+                        break;
                     case 'Date':
                     case 'Material':
                     case 'Location':
-                        newText = textHTMLOutput(newText, {size: 11, linebreak: false});
+                        var nextText = splitText[n + 1];
+                        switch (nextText[0]) {
+                            case 'Date':
+                            case 'Material':
+                            case 'Location':
+                                newText = textHTMLOutput(newText, {size: 11, linebreak: false});
+                                break;
+                            default:
+                                newText = textHTMLOutput(newText, {size: 11});
+                                break;
+                        }
+                        break;
+                    case 'Body':
+                        newText = textHTMLOutput(newText, {size: defaultSize, paragraph: defaultPara});
                         break;
                     default:
-                        newText = textHTMLOutput(newText, {size: 11});
-                        break;
+                        newText = '<br>';
                 }
-                break;
-            case 'Body':
-                newText = textHTMLOutput(newText, {size: defaultSize, paragraph: defaultPara});
-                break;
-            default:
-                newText = '<br>';
-        }
-        outText += newText;
-    }
-    //appending plan date and date attribution
-    //outText += textHTMLOutput('---', { size: 10, linebreak: false });
-
-    //remove extra line breaks
-    while (outText.match('<br><br><br>') != null) {
-        outText = outText.replaceAll('<br><br><br>', '<br><br>');
-    }
-    return outText;//output
-}
-
-//reseting scroll position on layer click
-function resetScroll() {
-    window.setTimeout(() => {
-        document.getElementById("sidebar-right").scrollTop = 0;
-    }, 1);
-}
-
-//packaged function for updating sidebar output
-function updateOutput(updateDiv, desc) {
-    //loading text to sidebar
-    L.DomUtil.get(updateDiv).innerHTML = descriptions[desc];
-    //reset scroll position
-    setTimeout(function () {
-        resetScroll();
-    }, 10);
-}
-
-//function to load and format descriptions 
-function loadDescriptions() {
-    var names = [];
-    var texts = [];
-    var textFiles = [];
-    //pulling text description from url
-    function readTxt(desc, url) {
-        return $.ajax({
-            url: url + desc + "/SamoWebsite_" + desc + ".txt",
-            dataType: "text",
-            success: function (response) {
-                textFiles.push([desc, response]);
+                outText += newText;
             }
-        });
-    }
-    //reading text descriptions for each monument
-    var feats = [defaultWebID];
-    uniqueFeatures(getAllFeatures(null, control), 'fullName', 'Label').forEach((f) => feats.push(f.properties.WebCode));
-    feats.forEach(function (f) {
-        texts.push(readTxt(f, url));
-    });
-    //object containing each description and key
-    $.when.apply(null, texts).always(function (response) {
-        var newTexts = {};
-        textFiles.forEach(function (t) {
-            newTexts[t[0]] = outText(t[0], url, t[1], { remove: remove, replace: replace });
-        });
-        descriptions = newTexts;
-        updateProgress(tileLayers.length + shpFiles.length + 1);
-        updateOutput(sidebarText, defaultWebID);
-    });
-}
+            //appending plan date and date attribution
+            //outText += textHTMLOutput('---', { size: 10, linebreak: false });
 
-//updating progress bar as layers/descriptions load
-function updateProgress(segments) {
-    var id = setInterval(frame, 10);
-    var iter = 0;
-    function frame() {
-        if (iter < 100) {
-            counter.progress += 1 / segments;
-            iter++;
-        } else {
-            clearInterval(id);
+            //remove extra line breaks
+            while (outText.match('<br><br><br>') != null) {
+                outText = outText.replaceAll('<br><br><br>', '<br><br>');
+            }
+            return outText;//output
         }
-    }
-    
-}
+
+        //reseting scroll position on layer click
+        function resetScroll() {
+            window.setTimeout(() => {
+                document.getElementById("sidebar-right").scrollTop = 0;
+            }, 1);
+        }
+
+        //packaged function for updating sidebar output
+        function updateOutput(updateDiv, desc) {
+            //loading text to sidebar
+            L.DomUtil.get(updateDiv).innerHTML = descriptions[desc];
+            //reset scroll position
+            setTimeout(function () {
+                resetScroll();
+            }, 10);
+        }
+
+        //function to load and format descriptions 
+        function loadDescriptions() {
+            var names = [];
+            var texts = [];
+            var textFiles = [];
+            //pulling text description from url
+            function readTxt(desc, url) {
+                return $.ajax({
+                    url: url + desc + "/SamoWebsite_" + desc + ".txt",
+                    dataType: "text",
+                    success: function (response) {
+                        textFiles.push([desc, response]);
+                    }
+                });
+            }
+            //reading text descriptions for each monument
+            var feats = [defaultWebID];
+            uniqueFeatures(getAllFeatures(null, control), 'fullName', 'Label').forEach((f) => feats.push(f.properties.WebCode));
+            feats.forEach(function (f) {
+                texts.push(readTxt(f, url));
+            });
+            //object containing each description and key
+            $.when.apply(null, texts).always(function (response) {
+                var newTexts = {};
+                textFiles.forEach(function (t) {
+                    newTexts[t[0]] = outText(t[0], url, t[1], { remove: remove, replace: replace });
+                });
+                descriptions = newTexts;
+                updateProgress(tileLayers.length + shpFiles.length + 1);
+                updateOutput(sidebarText, defaultWebID);
+                updateWidth();
+            });
+        }
+
+        //updating progress bar as layers/descriptions load
+        function updateProgress(segments) {
+            var id = setInterval(frame, 10);
+            var iter = 0;
+            function frame() {
+                if (iter < 100) {
+                    counter.progress += 1 / segments;
+                    iter++;
+                } else {
+                    clearInterval(id);
+                }
+            }
+            
+        }
     </script>
 </body>
 </html>

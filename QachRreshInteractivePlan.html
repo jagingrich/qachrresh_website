@@ -14,14 +14,192 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
     <script src="https://unpkg.com/shpjs@latest/dist/shp.js"></script>
 
-    <script src="https://cdn.jsdelivr.net/gh/jagingrich/samo_website/Data/mapCode/SamothraceInteractivePlan.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jagingrich/samo_website/Data/mapCode/SamothraceInteractivePlan.css" />
-
     <style>
         html, body {
             height: 100%;
             margin: 0;
             padding: 0;
+            background-color: rgb(0, 0, 0);
+        }
+        #map {
+            height: 100%;
+            width: 100%;
+            background-color: #000000;
+            left: 0;
+            position: absolute;
+            transition: left 1000ms;
+        }
+
+        #loading {
+            position: absolute;
+            z-index: 3000;
+            height: 100%;
+            width: 100%;
+            background: white;
+        }
+
+        #progressBox {
+            width: 20%;
+            margin-left: 40%;
+            top: 45%;
+            height: 15px;
+            position: absolute;
+            border-radius: 5px;
+            border-color: gray;
+            border-style: solid;
+            border-width: 1px;
+            box-shadow: 0 0 4px rgba(0, 0, 0, 0.65);
+        }
+
+        #progressBg {
+            width: 100%;
+            height: 15px;
+            background-color: #9c9c9c;
+            color: white;
+            border-radius: inherit;
+            border-width: 0px;
+        }
+
+        #progressBar {
+            width: 0%;
+            height: 15px;
+            background-color: #00ccff;
+            color: white;
+            border-radius: inherit;
+            border-width: 0px;
+        }
+
+        .sidebar {
+            height: 100%;
+            position: absolute;
+            background-color: rgb(0, 0, 0);
+            color: rgb(255, 255, 255);
+            overflow: auto;
+            -webkit-box-sizing: border-box;
+            -moz-box-sizing: border-box;
+            box-sizing: border-box;
+            padding: 10px;
+            z-index: 2000;
+            font-family: Helvetica, Arial, sans-serif;
+            line-height: 1.5;
+            /* box-shadow: 0 1px 7px rgba(0, 0, 0, 0.65);
+            -webkit-border-radius: 4px;
+            border-radius: 4px; */
+            transition: width 1000ms;
+        }
+        #sidebar-left{
+            left: 0;
+            width: 0;
+            transform: scaleX(-1);
+        }
+        #sidebar-right{
+            right: 0;
+            width: 0;
+        }
+
+        #leaflet-refresh-button {
+            display: flex;
+            align-items: center;
+            position: relative;
+            width: auto;
+            height: auto;
+            padding: 2px 8px;
+            background-color: white;
+            border-radius: 1px;
+            border-color: gray;
+            border-style: solid;
+            border-width: 1px 1px 1px 1px;
+            opacity: 0.7;
+            text-align: center;
+            z-index: 500;
+        }
+
+        #leaflet-refresh-button:hover {
+            opacity: 1;
+            cursor: pointer;
+        }
+
+        .recenter-icon {
+            background-image: url(https://raw.githubusercontent.com/jagingrich/samo_website/main/Data/mapIcons/map-Recenter.png);
+            background-size: 26px 26px;
+        }
+
+        .leaflet-control-layers-scrollbar {
+            scroll-behavior: smooth;
+        }
+
+        .info {
+            padding: 6px 8px;
+            font: 14px/16px Arial, Helvetica, sans-serif;
+            background: white;
+            background: rgba(255,255,255,0.8);
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            border-radius: 5px;
+        }
+
+        .legend {
+            line-height: 18px;
+            color: #555;
+        }
+
+        .legend i {
+            width: 18px;
+            height: 18px;
+            float: left;
+            margin-right: 8px;
+            opacity: 0.85;
+        }
+
+        #dropdown {
+            width: 100%;
+            top: 10px;
+            position: absolute;
+            font: 14px/16px Arial, Helvetica, sans-serif;
+            z-index: 2600;
+        }
+
+        #dropdown-contents {
+            position: absolute;
+            width: 60%;
+            left: 54px;
+            overflow: hidden;
+            height: 30px;
+            padding: 4px 2px;
+            background-color: white;
+            border-radius: 5px;
+            border-color: gray;
+            border-style: solid;
+            border-width: 1px 1px 1px 1px;
+            opacity: 0.7;
+            text-align: center;
+            z-index: 2200;
+            font-size: 16px;
+            font-family: inherit;
+        }
+
+        #dropdown-contents:hover {
+            opacity: 1;
+            cursor: pointer;
+        }
+
+        @media (max-width: 749px) {
+            .sidebar {
+                box-shadow: none;
+                -webkit-border-radius: 0;
+                border-radius: 0;
+            }
+
+            #dropdown {
+                z-index: 2600;
+            }
+
+            #dropdown-contents {
+                left: 20px;
+                z-index: 2200;
+            }
+            #sidebar-content {
+                padding-top: 50px;
+            }
         }
         .leaflet-tooltip-left:before {
             right: 0;
@@ -55,7 +233,8 @@
 </head>
 <body>
     <div id="map"></div>
-    <div id="sidebar"></div>
+    <div id="sidebar-right" class="sidebar"></div>
+    <div id="sidebar-left" class="sidebar"></div>
     <!--
     <div id="loading">
         <div id="progressBox">
@@ -108,6 +287,8 @@
                         document.getElementById('leaflet-refresh-container').style.display = 'none';
                         document.getElementById('leaflet-basemap-toggle-container').style.display = 'block';
                         map.getPane('click-pane').style.display = 'block';
+                        _sidebar.setSidebar('right');
+                        updateWidth();
                         break;
                     case 'OPA':
                         console.log("Operation A");
@@ -121,6 +302,8 @@
                         document.getElementById('leaflet-refresh-container').style.display = 'block';
                         document.getElementById('leaflet-basemap-toggle-container').style.display = 'none';
                         map.getPane('click-pane').style.display = 'none';
+                        _sidebar.setSidebar('left');
+                        updateWidth();
                         break;
                     case 'OPB':
                         console.log("Operation B");
@@ -134,6 +317,8 @@
                         document.getElementById('leaflet-refresh-container').style.display = 'block';
                         document.getElementById('leaflet-basemap-toggle-container').style.display = 'none';
                         map.getPane('click-pane').style.display = 'none';
+                        _sidebar.setSidebar('right');
+                        updateWidth();
                         break;
                     default:
                         break;
@@ -273,8 +458,37 @@
         updateInputs();
 
         //creating divs for parts of interactive plan
-        divCreate('dropdown', 'map');
-        divCreate(sidebarText, 'sidebar');
+        const _sidebar = {
+            side: 'right',
+            setSidebar(show) {
+                hide = null;
+                if (show == 'right') {
+                    hide = 'left';
+                } else {
+                    hide = 'right';
+                }
+                document.getElementById('sidebar-' + hide).style.width = '0px';
+                document.getElementById('sidebar-' + hide).style.padding = '0px';
+                if (show != this.side) {
+                    w = roundWidth();
+                    this.side = show;
+                    if (document.getElementById('sidebar-' + hide).firstChild != null) {
+                        node = document.getElementById('sidebar-' + hide).firstChild;
+                        document.getElementById('sidebar-' + show).appendChild(node);
+                    }
+                    if (show == 'right') {
+                        document.getElementById('map').style.left = '0px';
+                        document.getElementById('sidebar-' + show).firstChild.style.transform = null;
+                    } else {
+                        document.getElementById('map').style.left = w[0] + 'px';
+                        document.getElementById('sidebar-' + show).firstChild.style.transform = 'scaleX(-1)';
+                    }
+                    document.getElementById('sidebar-' + show).style.width = w[0] + 'px';
+                    document.getElementById('sidebar-' + show).style.padding = '10px';
+                }
+            }
+        };
+        divCreate(sidebarText, 'sidebar-' + _sidebar.side);
 
         //creating map bounds
         var mapbounds = L.latLngBounds(L.latLng(40.5005, 25.5312), L.latLng(40.5016, 25.5332));
@@ -380,7 +594,7 @@ function updateInputs() {
     baseshps = 'https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/QR_Operations.shp';
     OPAtileLayer = 'https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapTiles/OpA/{z}/{x}/{y}.png';
     OPBtileLayer = 'https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapTiles/OpB/{z}/{x}/{y}.png';
-    attribution = 'JAG2023 | <a href="https://www.samothrace.emory.edu/">American Excavations Samothrace';
+    attribution = 'JAG2023 | <a href="https://scholarblogs.emory.edu/rliim/">Rural Landscapes of Iron Age Imperial Mesopotamia';
     shpLayers = ['https://cdn.rawgit.com/jagingrich/samo_website/main/Data/mapFeatures/SamoWeb_RestoredStatePlan_Overlay.shp',
         'https://cdn.rawgit.com/jagingrich/samo_website/main/Data/mapFeatures/SamoWeb_ActualStatePlan_Overlay.shp'];
 
@@ -827,9 +1041,12 @@ function roundWidth() {
 function updateWidth() {
     var oldWidth = width;
     var w = roundWidth();
-    width = 'width="' + w[1] + 'px"';
+    width = 'width="' + w[1] + 'px"'; 
+    if (_sidebar.side == 'left') {
+        document.getElementById('map').style.left = w[0] + 'px';
+    }
     document.getElementById('map').style.width = w[2] + 'px';
-    document.getElementById('sidebar').style.width = w[0] + 'px';
+    document.getElementById('sidebar-' + _sidebar.side).style.width = w[0] + 'px';
     if (document.getElementById(sidebarText)) {
         document.getElementById(sidebarText).innerHTML = document.getElementById(sidebarText).innerHTML.replaceAll('width="400px"', width);
         document.getElementById(sidebarText).innerHTML = document.getElementById(sidebarText).innerHTML.replaceAll(oldWidth, width);
@@ -1016,9 +1233,8 @@ function outText(desc, url, text, { remove = [null], replace = [[keyword = null,
         outText += newText;
     }
     //appending plan date and date attribution
-    outText += textHTMLOutput('---', { size: 10, linebreak: false });
-    outText += textHTMLOutput('Dates provided in the legend based on interpretations by Karl Lehmann and Phyllis Williams Lehmann', { size: 10, linebreak: false });
-    outText += textHTMLOutput('Plan date: 2021 - 2022', { size: 10, linebreak: false });
+    //outText += textHTMLOutput('---', { size: 10, linebreak: false });
+
     //remove extra line breaks
     while (outText.match('<br><br><br>') != null) {
         outText = outText.replaceAll('<br><br><br>', '<br><br>');
@@ -1029,7 +1245,7 @@ function outText(desc, url, text, { remove = [null], replace = [[keyword = null,
 //reseting scroll position on layer click
 function resetScroll() {
     window.setTimeout(() => {
-        document.getElementById("sidebar").scrollTop = 0;
+        document.getElementById("sidebar-right").scrollTop = 0;
     }, 1);
 }
 

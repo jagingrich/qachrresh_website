@@ -47,6 +47,10 @@
             pointer-events: none;
             box-shadow: none;
         }
+        .leaflet-basemap-pane-pane{
+            opacity: 1;
+            transition: opacity 500ms;
+        }
     </style>
 </head>
 <body>
@@ -99,6 +103,7 @@
                         map.setMaxZoom(21);
                         map.setMinZoom(17);
                         map.getPane('basemap-pane').style.zIndex = 250;
+                        map.getPane('basemap-pane').style.opacity = 1;
                         map.getPane('overdata-pane').style.zIndex = 200;
                         document.getElementById('leaflet-refresh-container').style.display = 'none';
                         document.getElementById('leaflet-basemap-toggle-container').style.display = 'block';
@@ -109,6 +114,9 @@
                         map.setMaxZoom(23);
                         map.setMinZoom(21);
                         map.getPane('basemap-pane').style.zIndex = 200;
+                        setTimeout(function() {
+                            map.getPane('basemap-pane').style.opacity = 0;
+                        }, 1000);
                         map.getPane('overdata-pane').style.zIndex = 250;
                         document.getElementById('leaflet-refresh-container').style.display = 'block';
                         document.getElementById('leaflet-basemap-toggle-container').style.display = 'none';
@@ -119,6 +127,9 @@
                         map.setMaxZoom(23);
                         map.setMinZoom(21);
                         map.getPane('basemap-pane').style.zIndex = 200;
+                        setTimeout(function() {
+                            map.getPane('basemap-pane').style.opacity = 0;
+                        }, 1000);
                         map.getPane('overdata-pane').style.zIndex = 250;
                         document.getElementById('leaflet-refresh-container').style.display = 'block';
                         document.getElementById('leaflet-basemap-toggle-container').style.display = 'none';
@@ -211,18 +222,17 @@
                             onEachFeature: onEachFeature,
                             pane: 'click-pane'
                         }).addTo(map);
-                        console.log(over);
                     });
                     L.tileLayer(OPAtileLayer, {
                         maxZoom: 23,
-                        minZoom: 20,
+                        minZoom: 17,
                         tms: true,
                         attribution: attribution,
                         pane: 'overdata-pane'
                     }).addTo(map);
                     L.tileLayer(OPBtileLayer, {
                         maxZoom: 23,
-                        minZoom: 20,
+                        minZoom: 17,
                         tms: true,
                         attribution: attribution,
                         pane: 'overdata-pane'
@@ -266,6 +276,9 @@
         divCreate('dropdown', 'map');
         divCreate(sidebarText, 'sidebar');
 
+        //creating map bounds
+        var mapbounds = L.latLngBounds(L.latLng(40.5005, 25.5312), L.latLng(40.5016, 25.5332));
+
         //creating map variable & layer control
         var map = L.map('map', {
             center: [40.5011, 25.5322],
@@ -281,20 +294,9 @@
         map.createPane('click-pane');
         map.getPane('click-pane').style.zIndex = 300;
 
-        onkeydown = (event) => {
-            if (event.key == 'a') {
-                state.select = "OPA";
-            } else
-            if (event.key == 'b') {
-                state.select = "OPB";
-            } else
-            if (event.key == 'q') {
-                state.select = "QR";
-            }
-        };
-        //creating map bounds
-        var mapbounds = L.latLngBounds(L.latLng(40.5005, 25.5312), L.latLng(40.5016, 25.5332));
+        //setting bounds on load
         map.flyToBounds(mapbounds);
+        map.setMaxBounds(mapbounds);
         state.bounds = mapbounds;
 
         //reading in shapefiles
@@ -502,6 +504,7 @@ function selectFeature(webCode) {
     //zoom to selection
     //console.log(webCode.target.getBounds());
     state.bounds = webCode.target.getBounds();
+    map.setMaxBounds(webCode.target.getBounds());
     state.select = webCode.target.feature.properties.WebCode;
     //zoomToFeature(getAllFeatures(null, control), webCode);
 }
@@ -739,6 +742,7 @@ function addRefresh() {
             L.DomEvent.disableClickPropagation(button);
             L.DomEvent.on(button, 'click', function () {
                 state.bounds = mapbounds;
+                map.setMaxBounds(mapbounds);
                 state.select = "QR";
             });
 
@@ -760,7 +764,7 @@ function addRecenterControl() {
     leaflet.Control.Recenter = leaflet.Control.extend({
         options: {
             position: 'topleft',
-            title: 'Zoom to Selected Feature'
+            title: 'Recenter'
         },
         _createButton: function (title, className, content, container, context) {
             this.link = leaflet.DomUtil.create('a', className, container);

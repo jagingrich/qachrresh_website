@@ -312,19 +312,21 @@
                     delay = 0;
                 }
                 setTimeout(function() {
-                    map.getPane(show).style.display = 'block';
-                    map.getPane(hide).style.zIndex = 200;
-                    map.getPane(show).style.zIndex = 250;
+                    //map.getPane(show).style.display = 'block';
                     map.getPane(hide).style.opacity = 0;
                     map.getPane(show).style.opacity = 1;
                     setTimeout(function() {
-                        map.getPane(hide).style.display = 'none';
-                    }, 500);
+                        map.getPane(hide).style.zIndex = 200;
+                        map.getPane(show).style.zIndex = 250;
+                    }, 1000);
                 }, delay);
             },
             update(select) {
                 switch(select) {
                     case 'QR':
+                        if (descriptions != null) {
+                            updateText("Introduction");
+                        }
                         console.log("Qach Rresh");
                         map.setMaxZoom(21);
                         map.setMinZoom(17);
@@ -335,22 +337,32 @@
                         updateWidth();
                         break;
                     case 'OPA':
+                        if (descriptions != null) {
+                            updateText("OperationA");
+                        }
                         console.log("Operation A");
                         map.setMaxZoom(23);
                         map.setMinZoom(21);
                         this.visiblePane('overdata-pane', 'basemap-pane', 1000);
-                        document.getElementById('leaflet-refresh-container').style.display = 'block';
-                        document.getElementById('leaflet-basemap-toggle-container').style.display = 'none';
+                        setTimeout(function() {
+                            document.getElementById('leaflet-refresh-container').style.display = 'block';
+                            document.getElementById('leaflet-basemap-toggle-container').style.display = 'none';
+                        }, 1500)
                         _sidebar.setSidebar('left');
                         updateWidth();
                         break;
                     case 'OPB':
+                        if (descriptions != null) {
+                            updateText("OperationB");
+                        }
                         console.log("Operation B");
                         map.setMaxZoom(23);
                         map.setMinZoom(21);
                         this.visiblePane('overdata-pane', 'basemap-pane', 1000);
-                        document.getElementById('leaflet-refresh-container').style.display = 'block';
-                        document.getElementById('leaflet-basemap-toggle-container').style.display = 'none';
+                        setTimeout(function() {
+                            document.getElementById('leaflet-refresh-container').style.display = 'block';
+                            document.getElementById('leaflet-basemap-toggle-container').style.display = 'none';
+                        }, 1500)
                         _sidebar.setSidebar('right');
                         updateWidth();
                         break;
@@ -497,7 +509,7 @@
         //setting description creation vars
         var sidebarText = 'sidebar-content';
         var url;
-        var defaultWebID = '(0)Introduction';
+        var defaultWebID = 'Introduction';
         var webID = defaultWebID;
         var descriptions;
         var dropdownDefault = [];
@@ -564,7 +576,7 @@
 
         //setting bounds on load
         map.flyToBounds(mapbounds);
-        map.setMaxBounds(mapbounds.pad(0.5));
+        map.setMaxBounds(mapbounds.pad(1));
         state.bounds = mapbounds;
 
         //reading in shapefiles
@@ -637,7 +649,7 @@
             }
         });
 
-        //FUNCTIONS THAT CREATE AND RUN THE SANCTUARY OF THE GREAT GODS SAMOTHRACE INTERACTIVE MAP PLAN
+        //FUNCTIONS THAT CREATE AND RUN THE RLIIM QACH RRESH INTERACTIVE MAP PLAN
         //Jared Gingrich 2023
 
         //update initial inputs for layers, groupings, urls, etc.
@@ -656,8 +668,8 @@
 
             dropdownName = 'dropdown-contents';
             //setting description creation vars
-            url = 'https://raw.githubusercontent.com/jagingrich/samo_website/main/Data/mapDescriptions/';
-            defaultWebID = '(0)Introduction';
+            url = 'https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapDescriptions/';
+            defaultWebID = 'Introduction';
             dropdownDefault = ['<option value="' + defaultWebID + '" disabled selected hidden>Select Monument</option>',
             '<option value="' + defaultWebID + '">About: Interactive Plan</option>'];
             remove = ['JAG_UNEDITED', 'Glennon'];
@@ -772,13 +784,12 @@
             //updateText(webCode);
 
             //zoom to selection
-            //console.log(webCode.target.getBounds());
-            state.bounds = webCode.target.getBounds();
             if (fitZoom) {
-                map.setMaxBounds(webCode.target.getBounds().pad(0.5));
+                state.bounds = webCode.target.getBounds();
+                map.setMaxBounds(webCode.target.getBounds().pad(1));
             }
             state.select = webCode.target.feature.properties.WebCode;
-            //zoomToFeature(getAllFeatures(null, control), webCode);
+            map.flyToBounds(webCode.target.getBounds());
         }
 
         //layer responsiveness
@@ -1014,7 +1025,7 @@
                     L.DomEvent.disableClickPropagation(button);
                     L.DomEvent.on(button, 'click', function () {
                         state.bounds = mapbounds;
-                        map.setMaxBounds(mapbounds.pad(0.5));
+                        map.setMaxBounds(mapbounds.pad(1));
                         state.select = "QR";
                     });
 
@@ -1088,11 +1099,11 @@
             }
             else {
                 return q < 750 ? [q, q - 40, q, q - 40] :
-                    q < 900 ? [305, 265, q - 305, q - 305 - topWidth] :
-                    q < 1050 ? [375, 335, q - 375, q - 375 - topWidth] :
-                    q < 1200 ? [440, 400, q - 440, q - 440 - topWidth] :
-                    q < 1350 ? [500, 460, q - 500, q - 500 - topWidth] :
-                                [555, 515, q - 555, q - 555 - topWidth];
+                    q < 900 ? [355, 315, q - 355, q - 355 - topWidth] :
+                    q < 1050 ? [425, 385, q - 425, q - 425 - topWidth] :
+                    q < 1200 ? [490, 450, q - 490, q - 490 - topWidth] :
+                    q < 1350 ? [550, 510, q - 550, q - 550 - topWidth] :
+                                [605, 565, q - 605, q - 605 - topWidth];
             }
         }
 
@@ -1326,7 +1337,7 @@
             //pulling text description from url
             function readTxt(desc, url) {
                 return $.ajax({
-                    url: url + desc + "/SamoWebsite_" + desc + ".txt",
+                    url: url + desc + "/QachRresh_" + desc + ".txt",
                     dataType: "text",
                     success: function (response) {
                         textFiles.push([desc, response]);
@@ -1334,8 +1345,8 @@
                 });
             }
             //reading text descriptions for each monument
-            var feats = [defaultWebID];
-            uniqueFeatures(getAllFeatures(null, control), 'fullName', 'Label').forEach((f) => feats.push(f.properties.WebCode));
+            var feats = ['Introduction', 'OperationA', 'OperationB'];
+            //uniqueFeatures(getAllFeatures(null, control), 'fullName', 'Label').forEach((f) => feats.push(f.properties.WebCode));
             feats.forEach(function (f) {
                 texts.push(readTxt(f, url));
             });

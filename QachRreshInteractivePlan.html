@@ -302,19 +302,30 @@
         const state = {
             state: 'QR',
             bounds: mapbounds,
+            visiblePane(show, hide, delay = null) {
+                if (delay == null) {
+                    delay = 0;
+                }
+                setTimeout(function() {
+                    map.getPane(show).style.display = 'block';
+                    map.getPane(hide).style.zIndex = 200;
+                    map.getPane(show).style.zIndex = 250;
+                    map.getPane(hide).style.opacity = 0;
+                    map.getPane(show).style.opacity = 1;
+                    setTimeout(function() {
+                        map.getPane(hide).style.display = 'none';
+                    }, 500);
+                }, delay);
+            },
             update(select) {
                 switch(select) {
                     case 'QR':
                         console.log("Qach Rresh");
                         map.setMaxZoom(21);
                         map.setMinZoom(17);
-                        map.getPane('basemap-pane').style.zIndex = 250;
-                        map.getPane('overdata-pane').style.zIndex = 200;
-                        map.getPane('basemap-pane').style.opacity = 1;
-                        map.getPane('overdata-pane').style.opacity = 0;
+                        this.visiblePane('basemap-pane', 'overdata-pane');
                         document.getElementById('leaflet-refresh-container').style.display = 'none';
                         document.getElementById('leaflet-basemap-toggle-container').style.display = 'block';
-                        map.getPane('click-pane').style.display = 'block';
                         _sidebar.setSidebar('right');
                         updateWidth();
                         break;
@@ -322,15 +333,9 @@
                         console.log("Operation A");
                         map.setMaxZoom(23);
                         map.setMinZoom(21);
-                        map.getPane('basemap-pane').style.zIndex = 200;
-                        map.getPane('overdata-pane').style.zIndex = 250;
-                        setTimeout(function() {
-                            map.getPane('basemap-pane').style.opacity = 0;
-                            map.getPane('overdata-pane').style.opacity = 1;
-                        }, 1000);
+                        this.visiblePane('overdata-pane', 'basemap-pane', 1000);
                         document.getElementById('leaflet-refresh-container').style.display = 'block';
                         document.getElementById('leaflet-basemap-toggle-container').style.display = 'none';
-                        map.getPane('click-pane').style.display = 'none';
                         _sidebar.setSidebar('left');
                         updateWidth();
                         break;
@@ -338,15 +343,9 @@
                         console.log("Operation B");
                         map.setMaxZoom(23);
                         map.setMinZoom(21);
-                        map.getPane('basemap-pane').style.zIndex = 200;
-                        map.getPane('overdata-pane').style.zIndex = 250;
-                        setTimeout(function() {
-                            map.getPane('basemap-pane').style.opacity = 0;
-                            map.getPane('overdata-pane').style.opacity = 1;
-                        }, 1000);
+                        this.visiblePane('overdata-pane', 'basemap-pane', 1000);
                         document.getElementById('leaflet-refresh-container').style.display = 'block';
                         document.getElementById('leaflet-basemap-toggle-container').style.display = 'none';
-                        map.getPane('click-pane').style.display = 'none';
                         _sidebar.setSidebar('right');
                         updateWidth();
                         break;
@@ -434,7 +433,7 @@
                     shp(baseshps.replaceAll('.shp', '')).then(function (out) {
                         var over = L.geoJSON(out, {
                             style: styleTransparent,
-                            onEachFeature: onEachFeature,
+                            onEachFeature: (feature, layer) => onEachFeature(feature, layer, true),
                             pane: 'click-pane'
                         }).addTo(map);
                         Object.values(over._layers).forEach((v) => {
@@ -447,7 +446,7 @@
                     });
                     operationTiles.forEach((t) => {
                         L.tileLayer(t, {
-                            maxZoom: 23,
+                            maxZoom: 24,
                             minZoom: 17,
                             tms: true,
                             attribution: attribution,
@@ -460,7 +459,6 @@
                             onEachFeature: onEachFeature, //UPDATE onEachFeature to differentiate different clickable layers
                             pane: 'overdata-pane'
                         }).addTo(map);
-                        console.log(over);
                         Object.values(over._layers).forEach((v) => {
                             v.bindTooltipDelayed(v.feature.properties.Name, 
                             {
@@ -555,10 +553,11 @@
         map.getPane('overdata-pane').style.zIndex = 200;
         map.createPane('click-pane');
         map.getPane('click-pane').style.zIndex = 300;
+        map.getPane('basemap-pane').appendChild(map.getPane('click-pane'));
 
         //setting bounds on load
         map.flyToBounds(mapbounds);
-        map.setMaxBounds(mapbounds);
+        map.setMaxBounds(mapbounds.pad(0.5));
         state.bounds = mapbounds;
 
         //reading in shapefiles
@@ -760,24 +759,26 @@
         }
 
         //selecting feature: click or dropdown
-        function selectFeature(webCode) {
+        function selectFeature(webCode, fitZoom = false) {
             //update text and dropdown
             //updateText(webCode);
 
             //zoom to selection
             //console.log(webCode.target.getBounds());
             state.bounds = webCode.target.getBounds();
-            map.setMaxBounds(webCode.target.getBounds());
+            if (fitZoom) {
+                map.setMaxBounds(webCode.target.getBounds().pad(0.5));
+            }
             state.select = webCode.target.feature.properties.WebCode;
             //zoomToFeature(getAllFeatures(null, control), webCode);
         }
 
         //layer responsiveness
-        function onEachFeature(feature, layer) {
+        function onEachFeature(feature, layer, fitZoom = false) {
             layer.on({
                 mouseover: highlightFeature,
                 mouseout: resetHighlight,
-                click: (e, event) => selectFeature(e)
+                click: (e, event) => selectFeature(e, fitZoom)
             });
         }
 
@@ -1005,7 +1006,7 @@
                     L.DomEvent.disableClickPropagation(button);
                     L.DomEvent.on(button, 'click', function () {
                         state.bounds = mapbounds;
-                        map.setMaxBounds(mapbounds);
+                        map.setMaxBounds(mapbounds.pad(0.5));
                         state.select = "QR";
                     });
 

@@ -453,17 +453,19 @@
                             pane: 'overdata-pane'
                         }).addTo(map);
                     })
-                    shp(operationShps.replaceAll('.shp', '')).then(function (out) {
-                        var over = L.geoJSON(out, {
-                            style: styleTransparent,
-                            onEachFeature: onEachFeature, //UPDATE onEachFeature to differentiate different clickable layers
-                            pane: 'overdata-pane'
-                        }).addTo(map);
-                        Object.values(over._layers).forEach((v) => {
-                            v.bindTooltipDelayed(v.feature.properties.Name, 
-                            {
-                                sticky: true,
-                                className: 'leaflet-textTitle' 
+                    operationShps.forEach((s) => {
+                        shp(s.replaceAll('.shp', '')).then(function (out) {
+                            var over = L.geoJSON(out, {
+                                style: styleTransparent,
+                                onEachFeature: onEachFeature,
+                                pane: 'overdata-pane'
+                            }).addTo(map);
+                            Object.values(over._layers).forEach((v) => {
+                                v.bindTooltipDelayed(v.feature.properties.Name, 
+                                {
+                                    sticky: true,
+                                    className: 'leaflet-textTitle' 
+                                });
                             });
                         });
                     });
@@ -639,7 +641,8 @@
             tileLayers = ['https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapTiles/DEM/{z}/{x}/{y}.png',
             'https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapTiles/MAG/{z}/{x}/{y}.png'];
             baseshps = 'https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/QR_Operations.shp';
-            operationShps = 'https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/OpA_Contexts.shp';
+            operationShps = ['https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/OpA_Contexts.shp',
+            'https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/OpB_Contexts.shp'];
             operationTiles = ['https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapTiles/OpA/{z}/{x}/{y}.png',
             'https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapTiles/OpB/{z}/{x}/{y}.png'];
             attribution = 'JAG2023 | <a href="https://scholarblogs.emory.edu/rliim/">Rural Landscapes of Iron Age Imperial Mesopotamia';

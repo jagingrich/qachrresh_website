@@ -177,6 +177,11 @@
             color: rgb(255, 255, 255);
         }
 
+        #sidebar-content {
+            overflow-x: hidden;
+            transition: opacity none;
+        }
+
         #dropdown {
             width: 100%;
             top: 10px;
@@ -1103,6 +1108,7 @@
             if (document.getElementById(sidebarText)) {
                 document.getElementById(sidebarText).innerHTML = document.getElementById(sidebarText).innerHTML.replaceAll('width="400px"', width);
                 document.getElementById(sidebarText).innerHTML = document.getElementById(sidebarText).innerHTML.replaceAll(oldWidth, width);
+                document.getElementById(sidebarText).style.width = w[1] + 'px';
             }
             if (document.getElementById('dropdown-contents')) {
                 document.getElementById('dropdown-contents').style.width = w[3] + 'px';

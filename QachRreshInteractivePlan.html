@@ -1169,40 +1169,75 @@
             return optionsOut;
         }
 
-        //html formating for text strings
-        function textHTMLOutput(text, { size = 16, bold = false, italics = false, paragraph = 'paragraph', linebreak = true } = {}) {
-            var input = text;
-            var head = '<text style="font-size:' + size + 'px;">';
-            var foot = '</text><br>';
-            if (bold == true) {//html for bold
-                head += '<b>';
-                foot = '</b>' + foot;
+        //a different mode of formating .txt to html
+        const txt = {
+            categories: {},
+            defaultSize: '16px',
+            paragraph: 'paragraph',
+            spacing: '20px',
+            addCategory(_class, options = {fontSize: '16px', fontWeight: 'normal', fontStyle: 'normal'}){
+                newDiv = document.createElement('div');
+                newDiv.value = _class;
+                Object.entries(options).forEach((o) => {
+                    newDiv.style[o[0]] = o[1];
+                });
+                this.categories[_class] = newDiv;
+            },
+            addDiv(_class, options = {fontSize: '16px', fontWeight: 'normal', fontStyle: 'normal'}){
+                newDiv = document.createElement('div');
+                newDiv.value = _class;
+                Object.entries(options).forEach((o) => {
+                    newDiv.style[o[0]] = o[1];
+                });
+                return newDiv;
             }
-            if (italics == true) {//html for italics
-                head += '<i>';
-                foot = '</i>' + foot;
-            }
-            if (linebreak == true) {//adding an additional linebreak
-                foot += '<br>';
-            }
-            switch (paragraph) {//paragraph styling
-                case 'indent':
-                    head = '<div style="text-indent: 36px;">' + head;
-                    foot += '</div>'
-                    break;
-                case 'hanging':
-                    head = '<div style="text-indent: -36px; padding-left: 36px;">' + head;
-                    foot += '</div>'
-                    break;
-                default:
-            }
-            return head + input + foot;//output
         }
+        txt.addCategory('Title', {fontSize: '30px', fontWeight: 'bold'});
+        txt.addCategory('Header', {fontSize: '24px', fontWeight: 'bold'});
+        txt.addCategory('Subheader', {fontWeight: 'bold'});
+        txt.addCategory('Bibliography', {fontSize: '18px', fontWeight: 'bold'});
+        txt.addCategory('Subtext', {fontSize: '11px'});
+        txt.addCategory('Body', {fontSize: txt.defaultSize});
+        txt.addCategory('Space', {height: txt.spacing});
+
+        //newCat = txt.categories['Title'].cloneNode();
+        console.log(txt);
+        
+        //html formating for text strings
+        //function textHTMLOutput(text, { size = 16, bold = false, italics = false, paragraph = 'paragraph', linebreak = true } = {}) {
+        //    var input = text;
+        //    var head = '<div style="font-size:' + size + 'px;">';
+        //    var foot = '</div><br>';
+        //    if (bold == true) {//html for bold
+        //        head += '<b>';
+        //        foot = '</b>' + foot;
+        //    }
+        //    if (italics == true) {//html for italics
+        //        head += '<i>';
+        //        foot = '</i>' + foot;
+        //    }
+        //    if (linebreak == true) {//adding an additional linebreak
+        //        foot += '<br>';
+        //    }
+        //    switch (paragraph) {//paragraph styling
+        //        case 'indent':
+        //            head = '<div style="text-indent: 36px;">' + head;
+        //            foot += '</div>'
+        //            break;
+        //        case 'hanging':
+        //            head = '<div style="text-indent: -36px; padding-left: 36px;">' + head;
+        //            foot += '</div>'
+        //            break;
+        //        default:
+        //    }
+        //    return head + input + foot;//output
+        //}
 
         //formatting text output for sidebar
         function splitTxt(text, { remove = [null], replace = [[keyword = null, replacement = null]]}) {
             //split input text to individual lines
-            var startText = text.match(/[^\r\n]+/g);
+            //var startText = text.match(/[^\r\n]+/g);
+            var startText = text.split(/\r?\n/);
             var splitText = [];
 
             //string of keywords to remove
@@ -1244,71 +1279,86 @@
 
         function outText(desc, url, text, { remove = [null], replace = [[keyword = null, replacement = null]] }) {
             var splitText = splitTxt(text, { remove: remove, replace: replace });
-            var outText = "";
+            var outText = document.createElement('div');
             var capcount = 0;
             var defaultSize = 14;
             var defaultPara = 'paragraph';
             //formatting each text output based on text code
             for (var n = 0; n < splitText.length; n++) {
                 var input = splitText[n];
+                var out;
                 var newText = input[1];
                 switch (input[0]) {
                     case 'Title':
                     case 'Monument':
-                        newText = textHTMLOutput(newText, {size: 30, bold: true});
+                        //newText = textHTMLOutput(newText, {size: 30, bold: true});
+                        out = txt.addDiv('Title', {fontSize: '30px', fontWeight: 'bold'});
+                        out.innerHTML = newText;
                         break;
                     case 'Subheader':
                     case 'Part':
-                        newText = textHTMLOutput(newText, {size: 16, bold: true, linebreak: false});
+                        out = txt.addDiv('Subheader', {fontSize: txt.defaultSize, fontWeight: 'bold'});
+                        out.innerHTML = newText;
                         break;
                     case 'Header':
-                        newText = textHTMLOutput(newText, {size: 24, bold: true, linebreak: false});
+                        out = txt.addDiv('Header', {fontSize: '24px', fontWeight: 'bold'});
+                        out.innerHTML = newText;
                         break;
                     case 'Bibliography':
                         defaultSize = 11;
                         defaultPara = 'hanging';
-                        newText = textHTMLOutput(newText, {size: 18, bold: true, linebreak: false});
+                        out = txt.addDiv('Bibliography', {fontSize: '18px'});
+                        out.innerHTML = newText;
                         break;
                     case 'Caption':
                         capcount += 1;
-                        const capUrl = '<img src="' + url + desc + "/SamoWebsite_" + desc + "_Image" + capcount + ".jpg" + '" ' + 'width="400px"' + ' /><br>';
+                        imgDiv = document.createElement('img');
+                        imgDiv.src = url + desc + "/QachRresh_" + desc + "_Image" + capcount + ".jpg";
+                        imgDiv.style.width = '400px';
                         if (newText.length === 0) {
-                            newText = '<br>';
+                            capDiv = txt.addDiv('Space', {height: '20px'});
                         } else {
-                            newText = textHTMLOutput(newText, {size: 11});
+                            capDiv = txt.addDiv('Subtext', {fontSize: '11px'});
+                            capDiv.innerHTML = newText;
                         }
-                        newText = capUrl + newText;
+                        out.appendChild(imgDiv);
+                        out.appendChild(capDiv);
                         break;
                     case 'Date':
                     case 'Material':
                     case 'Location':
-                        var nextText = splitText[n + 1];
-                        switch (nextText[0]) {
-                            case 'Date':
-                            case 'Material':
-                            case 'Location':
-                                newText = textHTMLOutput(newText, {size: 11, linebreak: false});
+                        out = txt.addDiv('Subtext', {fontSize: '11px'});
+                        out.innerHTML = newText;
+                        break;
+                    case 'Body':
+                        out = txt.addDiv('Body', {fontSize: txt.defaultSize});
+                        out.innerHTML = newText;
+                        out.style.fontSize = defaultSize;
+                        switch(defaultPara) {
+                            case 'indent':
+                                out.style.textIndent = '36px';
+                                break;
+                            case 'hanging':
+                                out.style.textIndent = '-36px';
+                                out.style.paddingLeft = '36px';
                                 break;
                             default:
-                                newText = textHTMLOutput(newText, {size: 11});
                                 break;
                         }
                         break;
-                    case 'Body':
-                        newText = textHTMLOutput(newText, {size: defaultSize, paragraph: defaultPara});
-                        break;
                     default:
-                        newText = '<br>';
+                        out = txt.addDiv('Space', {height: '20px'});
                 }
-                outText += newText;
+                outText.appendChild(out);
             }
             //appending plan date and date attribution
             //outText += textHTMLOutput('---', { size: 10, linebreak: false });
 
             //remove extra line breaks
-            while (outText.match('<br><br><br>') != null) {
-                outText = outText.replaceAll('<br><br><br>', '<br><br>');
-            }
+            //while (outText.match('<br><br><br>') != null) {
+            //    outText = outText.replaceAll('<br><br><br>', '<br><br>');
+            //}
+            console.log(outText);
             return outText;//output
         }
 
@@ -1322,7 +1372,11 @@
         //packaged function for updating sidebar output
         function updateOutput(updateDiv, desc) {
             //loading text to sidebar
-            L.DomUtil.get(updateDiv).innerHTML = descriptions[desc];
+            //L.DomUtil.get(updateDiv).innerHTML = descriptions[desc];
+            if (document.getElementById(updateDiv).firstChild) {
+                document.getElementById(updateDiv).firstChild.remove();
+            }
+            document.getElementById(updateDiv).appendChild(descriptions[desc].cloneNode(true));
             //reset scroll position
             setTimeout(function () {
                 resetScroll();

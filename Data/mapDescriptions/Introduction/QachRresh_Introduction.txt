@@ -1,7 +1,15 @@
-Title: Sanctuary of the Great Gods: Interactive Plan
+Title: Qach Rresh: Interactive Plan
 
-American Excavations Samothrace is the latest in a long succession of archaeological investigations on Samothrace.  French, German, Greek, Austrian, and Czech investigators have all helped to build the story of Samothrace. The American team, sponsored by the Institute of Fine Arts of New York University, began its work at the Sanctuary in 1938. In 2012, Emory University joined the Institute of Fine Arts as the American sponsors of the research team, directed by Bonna D. Wescoat of Emory. Excavations are conducted under the auspices of the American School of Classical Studies at Athens and the supervision of the Ephoreia of Antiquities of Evros.
+The Rural Landscapes of Iron Age Imperial Mesopotamia project (RLIIM) seeks to understand how imperial polities of ancient Mesopotamia interacted with the landscape via policies of resource extraction, population resettlement, and centralized infrastructure.  So far, the rural hinterlands of the Assyrian Empire have remained largely under-investigated, but have much to reveal about the relationship between Assyrian imperial structure and organic bottom-up growth.
 
-In antiquity, the fame of Samothrace emanated from its cult of the Megaloi Theoi, the Great Gods. Their sanctuary was set in a valley facing the northern coast of Samothrace, framed by converging torrents that poured off the slopes of the mountain above. This valley was filled with monumental structures that played a fundamental role in the mysteria, the rites of initiation. The Sanctuary of the Great Gods was built and redeveloped over centuries of use, spanning from the 7th century BCE to the 4th century CE. 
+Subheader: Excavations
 
-Click on the interactive plan or navigate using the <i>Select Monument</i> menu above the map to learn more about the Sanctuary of the Great Gods. 
+Qach Rresh is a small site (less than 5 hectares) founded in the Neo-Assyrian period in an area without immediate access to water, located just 15km south of modern-day Erbil (Iraqi Kurdistan).  It was first recorded by the Erbil Plain Archaeological Survey in 2017, with survey results indicating that it was abandoned after the collapse of the Assyrian Empire.  For what reasons was this site founded?  And why in an area without regular access to the natural water supply?  With the first excavation season conducted in Fall 2022, preliminary understandings of the site have begun to explore these questions.
+
+Subheader: Geophysical Remote Sensing
+
+Magnetometry conducted at Qach Rresh in 2021 revealed a wealth of unexpected structures, including the remains of a well-preserved building with at least fourteen separate rooms, possibly used for centralized storage of agricultural produce.  The results also showed probable domestic areas, along with several streets and other structures.  This data is critical to the success of the excavations and our wider understanding of the site’s layout as a whole.
+
+Subheader: Landscape Context
+
+One of the main goals of this project is to understand how the Assyrian Empire utilized rural spaces, and to what extent this was a centralized program of building and infrastructure.  Qach Rresh is the first rural village to be excavated in the Assyrian heartland.  The results will not only help us to understand more about Assyrian settlements as a whole, but also agricultural practices and population organization in imperial spaces.

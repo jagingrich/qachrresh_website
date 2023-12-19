@@ -1,8 +1,12 @@
+Caption:
+
 Title: Archaeology at Qach Rresh: Interactive Plan
 
 The Rural Landscapes of Iron Age Imperial Mesopotamia project (RLIIM) seeks to understand how imperial polities of ancient Mesopotamia interacted with the landscape via policies of resource extraction, population resettlement, and centralized infrastructure.  So far, the rural hinterlands of the Assyrian Empire have remained largely under-investigated, but have much to reveal about the relationship between Assyrian imperial structure and organic bottom-up growth.
 
-Subheader: The 2022 Season
+Caption:
+
+Header: The 2022 Season
 With a season lasting 5 weeks (from August 31 – October 2, 2022) the RLIIM team opened two trenches over the main building remains at Qach Rresh.
 
 Both the buildings in Operation A and Operation B were difficult to identify based on excavation alone, due to significant deterioration in the mudbrick. By using the magnetometry data together with the excavation, we were able to come to several conclusions about the site after one season:

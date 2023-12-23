@@ -312,7 +312,6 @@
                     delay = 0;
                 }
                 setTimeout(function() {
-                    //map.getPane(show).style.display = 'block';
                     map.getPane(hide).style.opacity = 0;
                     map.getPane(show).style.opacity = 1;
                     setTimeout(function() {
@@ -327,7 +326,6 @@
                         if (txt.texts != null) {
                             updateText("Introduction");
                         }
-                        console.log("Qach Rresh");
                         map.setMaxZoom(21);
                         map.setMinZoom(17);
                         this.visiblePane('basemap-pane', 'overdata-pane');
@@ -340,7 +338,6 @@
                         if (txt.texts != null) {
                             updateText("OperationA");
                         }
-                        console.log("Operation A");
                         map.setMaxZoom(23);
                         map.setMinZoom(21);
                         this.visiblePane('overdata-pane', 'basemap-pane', 1000);
@@ -355,7 +352,6 @@
                         if (txt.texts != null) {
                             updateText("OperationB");
                         }
-                        console.log("Operation B");
                         map.setMaxZoom(23);
                         map.setMinZoom(21);
                         this.visiblePane('overdata-pane', 'basemap-pane', 1000);
@@ -771,6 +767,7 @@
         function selectFeature(webCode, fitZoom = false) {
             //update text and dropdown
             //updateText(webCode);
+            console.log(webCode.target.feature.properties.WebCode);
 
             //zoom to selection
             if (fitZoom) {
@@ -1320,7 +1317,14 @@
                     //formatting text lines as html divs
                     var outDiv = document.createElement('div');
                     //formatting each text output based on text code
-                    out.slice().forEach((o) => outDiv.appendChild(txt.addDiv(o.Code, o.Text, o.src)) );
+                    out.slice().forEach((o) => {
+                        var newChild = txt.addDiv(o.Code, o.Text, o.src);
+                        if (JSON.stringify(o.Text.substring(0,1)) == JSON.stringify('\t')) {
+                            newChild.style.textIndent = '36px';
+                        }
+                        outDiv.appendChild(newChild);
+                    });
+                    
                     //output
                     parent.texts[desc] = {WebCode: desc, Text: out, Div: outDiv, Url: url};
                 }).always(function(){

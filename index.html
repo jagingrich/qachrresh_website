@@ -39,7 +39,7 @@
             z-index: 3000;
             height: 100%;
             width: 100%;
-            background: white;
+            background: black;
         }
 
         #progressBox {
@@ -58,7 +58,7 @@
         #progressBg {
             width: 100%;
             height: 15px;
-            background-color: #9c9c9c;
+            background-color: #727272;
             color: white;
             border-radius: inherit;
             border-width: 0px;
@@ -67,7 +67,7 @@
         #progressBar {
             width: 0%;
             height: 15px;
-            background-color: #00ccff;
+            background-color: #0d9700;
             color: white;
             border-radius: inherit;
             border-width: 0px;
@@ -269,7 +269,6 @@
     <div id="map"></div>
     <div id="sidebar-right" class="sidebar"></div>
     <div id="sidebar-left" class="sidebar"></div>
-    <!--
     <div id="loading">
         <div id="progressBox">
             <div id="progressBg">
@@ -277,19 +276,18 @@
             </div>
         </div>
     </div>
-    -->
 
     <script>// initialize the map
 
         //progress counter for loading the interactive plan
-        //var elem = document.getElementById("progressBar");
+        var elem = document.getElementById("progressBar");
         const counter = {
             count: 0,
             update(count) {
                 count = Math.round(count * 100) / 100;
-                //elem.style.width = count + "%";
+                elem.style.width = count + "%";
                 if (count >= 100) {
-                    //$('#loading').fadeOut(250);
+                    $('#loading').fadeOut(250);
                     var allFeatures = getAllFeatures(map);
                     if (allFeatures.length > 0) {
                         zoomToFeature(allFeatures, webID);
@@ -403,13 +401,14 @@
 
         //shapfile loading counter, starting map on all shapefiles loaded
         const layerCounter = {
+            shapes: {},
             count: 0,
             update() {
                 if (this.count == shpLayers.length) {
                     addLayerGroups(
                         mapInput = map,
                         layerControl = control,
-                        layers = [...tileLayers, ...shpFiles],
+                        layers = tileLayers,
                         groups = generateLayerGroups({ groups: groups }),
                         functionOnLoad = function () {
                             getAllFeatures(map, true).forEach((v) => {
@@ -438,29 +437,20 @@
                             state.bounds = mapbounds;
                         }
                     );
-                    shp(baseshps.replaceAll('.shp', '')).then(function (out) {
-                        var over = L.geoJSON(out, {
-                            style: styleTransparent,
-                            onEachFeature: (feature, layer) => onEachFeature(feature, layer, true, 0.1),
-                            pane: 'click-pane'
-                        }).addTo(map);
-                        getAllFeatures(over, true).forEach((v) => {
-                            v.bindTooltipDelayed(v.feature.properties.Name, 
-                            { sticky: true, className: 'leaflet-textTitle' });
-                        });
-                    });
-                    operationTiles.forEach((t) => {
-                        L.tileLayer(t, {
-                            maxZoom: 24,
-                            minZoom: 17,
-                            tms: true,
-                            attribution: attribution,
-                            pane: 'overdata-pane'
-                        }).addTo(map);
-                    })
-                    operationShps.forEach((s) => {
-                        shp(s.replaceAll('.shp', '')).then(function (out) {
-                            var over = L.geoJSON(out, {
+                    Object.values(layerCounter.shapes).forEach((s) => {
+                        if(s.name == 'QR_Operations') {
+                            var over = L.geoJSON(s, {
+                                style: styleTransparent,
+                                onEachFeature: (feature, layer) => onEachFeature(feature, layer, true, 0.1),
+                                pane: 'click-pane'
+                            }).addTo(map);
+                            getAllFeatures(over, true).forEach((v) => {
+                                v.bindTooltipDelayed(v.feature.properties.Name, 
+                                { sticky: true, className: 'leaflet-textTitle' });
+                            });
+                        }
+                        else {
+                            var over = L.geoJSON(s, {
                                 style: styleTransparent,
                                 onEachFeature: (feature, layer) => onEachFeature(feature, layer),
                                 pane: 'overdata-pane'
@@ -472,9 +462,17 @@
                                     className: 'leaflet-textTitle' 
                                 });
                             });
-                        });
+                        }
                     });
-                    
+                    operationTiles.forEach((t) => {
+                        L.tileLayer(t, {
+                            maxZoom: 24,
+                            minZoom: 17,
+                            tms: true,
+                            attribution: attribution,
+                            pane: 'overdata-pane'
+                        }).addTo(map);
+                    })
                 }
             },
             get iteration() {
@@ -646,23 +644,21 @@
             groups = [["Elevation Model", "DEM"], ["Magnetometry", "MAG"]];
             tileLayers = ['./Data/mapTiles/DEM/{z}/{x}/{y}.png',
             './Data/mapTiles/MAG/{z}/{x}/{y}.png'];
-            baseshps = 'https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/QR_Operations.shp';
-            operationShps = ['https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/OpA_Contexts.shp',
-            'https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/OpB_Contexts.shp'];
             operationTiles = ['./Data/mapTiles/OpA/{z}/{x}/{y}.png',
             './Data/mapTiles/OpB/{z}/{x}/{y}.png'];
             attribution = 'JAG2024 | <a href="https://scholarblogs.emory.edu/rliim/">Rural Landscapes of Iron Age Imperial Mesopotamia';
-            shpLayers = ['https://cdn.rawgit.com/jagingrich/samo_website/main/Data/mapFeatures/SamoWeb_RestoredStatePlan_Overlay.shp',
-                'https://cdn.rawgit.com/jagingrich/samo_website/main/Data/mapFeatures/SamoWeb_ActualStatePlan_Overlay.shp'];
+            shpLayers = ['https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/QR_Operations.shp',
+            'https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/OpA_Contexts.shp',
+            'https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/OpB_Contexts.shp'];
 
-            dropdownName = 'dropdown-contents';
+            //dropdownName = 'dropdown-contents';
             //setting description creation vars
             url = 'https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapDescriptions/';
             defaultWebID = 'Introduction';
-            dropdownDefault = ['<option value="' + defaultWebID + '" disabled selected hidden>Select Monument</option>',
-            '<option value="' + defaultWebID + '">About: Interactive Plan</option>'];
-            remove = ['JAG_UNEDITED', 'Glennon'];
-            replace = {key: 'Bibliography:', replacement: 'Bibliography: Selected Bibliography'};
+            //dropdownDefault = ['<option value="' + defaultWebID + '" disabled selected hidden>Select Monument</option>',
+            //'<option value="' + defaultWebID + '">About: Interactive Plan</option>'];
+            //remove = ['JAG_UNEDITED', 'Glennon'];
+            //replace = {key: 'Bibliography:', replacement: 'Bibliography: Selected Bibliography'};
         }
 
         //creating divs for parts of interactive plan in map, overlay divs
@@ -969,7 +965,7 @@
                     shp(url).then(function (out) {
                         out.name = url.split('/')[url.split('/').length - 1];
                         out.features.forEach((f) => f.properties.fullName = '(' + f.properties.Label + ') ' + f.properties.Name);
-                        shpFiles.push(out);
+                        layerCounter.shapes[out.name] = out;
                         layerCounter.iteration++;
                     });
                 },
@@ -1202,6 +1198,9 @@
             //updateOutput(sidebarText, defaultWebID);
             updateWidth(); //updating window width
         }   
+
+        //starting the map (temp location)
+        layerCounter.update();
 
         //reseting scroll position on layer click
         function resetScroll() {

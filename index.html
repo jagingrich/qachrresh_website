@@ -1,0 +1,1449 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Qach Rresh Interactive Site Plan</title>
+    <!--
+    <link rel="icon" href="https://raw.githubusercontent.com/jagingrich/samo_website/main/Data/mapIcons/SamoWebsite_Icon.png"
+          type="image/x-icon">
+          -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
+    <script src="https://unpkg.com/shpjs@latest/dist/shp.js"></script>
+
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background-color: rgb(0, 0, 0);
+        }
+        #map {
+            height: 100%;
+            width: 100%;
+            background-color: #000000;
+            left: 0;
+            position: absolute;
+            transition: left 1000ms;
+        }
+
+        #loading {
+            position: absolute;
+            z-index: 3000;
+            height: 100%;
+            width: 100%;
+            background: white;
+        }
+
+        #progressBox {
+            width: 20%;
+            margin-left: 40%;
+            top: 45%;
+            height: 15px;
+            position: absolute;
+            border-radius: 5px;
+            border-color: gray;
+            border-style: solid;
+            border-width: 1px;
+            box-shadow: 0 0 4px rgba(0, 0, 0, 0.65);
+        }
+
+        #progressBg {
+            width: 100%;
+            height: 15px;
+            background-color: #9c9c9c;
+            color: white;
+            border-radius: inherit;
+            border-width: 0px;
+        }
+
+        #progressBar {
+            width: 0%;
+            height: 15px;
+            background-color: #00ccff;
+            color: white;
+            border-radius: inherit;
+            border-width: 0px;
+        }
+
+        .sidebar {
+            height: 100%;
+            position: absolute;
+            background-color: rgb(0, 0, 0);
+            color: rgb(255, 255, 255);
+            overflow: auto;
+            -webkit-box-sizing: border-box;
+            -moz-box-sizing: border-box;
+            box-sizing: border-box;
+            padding: 10px;
+            z-index: 2000;
+            font-family: Helvetica, Arial, sans-serif;
+            line-height: 1.5;
+            /* box-shadow: 0 1px 7px rgba(0, 0, 0, 0.65);
+            -webkit-border-radius: 4px;
+            border-radius: 4px; */
+            transition: width 1000ms;
+        }
+        #sidebar-left{
+            left: 0;
+            width: 0;
+            transform: scaleX(-1);
+        }
+        #sidebar-right{
+            right: 0;
+            width: 0;
+        }
+
+        #leaflet-refresh-button {
+            background-color: rgb(45, 45, 45, 0.5);
+            display: flex;
+            align-items: center;
+            position: relative;
+            width: auto;
+            height: auto;
+            padding: 2px 8px;
+            border-radius: 1px;
+            border-color: gray;
+            border-style: solid;
+            border-width: 1px 1px 1px 1px;
+            opacity: 0.7;
+            text-align: center;
+            z-index: 500;
+        }
+
+        #leaflet-refresh-button:hover {
+            opacity: 1;
+            cursor: pointer;
+            background-color: rgb(25, 25, 25);
+        }
+
+        .recenter-icon {
+            background-image: url(https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapIcons/map-Recenter.png);
+            background-size: 26px 26px;
+        }
+
+        .leaflet-control-layers-scrollbar {
+            scroll-behavior: smooth;
+        }
+
+        .info {
+            padding: 6px 8px;
+            font: 14px/16px Arial, Helvetica, sans-serif;
+            background: white;
+            background: rgba(255,255,255,0.8);
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            border-radius: 5px;
+        }
+
+        .legend {
+            line-height: 18px;
+            color: #555;
+        }
+
+        .legend i {
+            width: 18px;
+            height: 18px;
+            float: left;
+            margin-right: 8px;
+            opacity: 0.85;
+        }
+
+        .leaflet-control{
+            background-color: rgb(45, 45, 45, 0.5);
+            color: rgb(255, 255, 255);
+        }
+
+        .leaflet-bar a{
+            background-color: rgb(45, 45, 45, 0.5);
+            color: rgb(255, 255, 255);
+        }
+        .leaflet-bar a:hover{
+            background-color: rgb(25, 25, 25);
+        }
+        .leaflet-bar a:focus{
+            background-color: rgb(25, 25, 25);
+        }
+        .leaflet-bar a.leaflet-disabled{
+            background-color: rgb(45, 45, 45, 0.5);
+        }
+
+        .leaflet-container .leaflet-control-attribution{
+            background-color: rgba(0, 0, 0, 0.8);
+            color: rgb(255, 255, 255);
+        }
+
+        #sidebar-content {
+            overflow-x: hidden;
+            transition: opacity none;
+        }
+
+        #dropdown {
+            width: 100%;
+            top: 10px;
+            position: absolute;
+            font: 14px/16px Arial, Helvetica, sans-serif;
+            z-index: 2600;
+        }
+
+        #dropdown-contents {
+            position: absolute;
+            width: 60%;
+            left: 54px;
+            overflow: hidden;
+            height: 30px;
+            padding: 4px 2px;
+            background-color: white;
+            border-radius: 5px;
+            border-color: gray;
+            border-style: solid;
+            border-width: 1px 1px 1px 1px;
+            opacity: 0.7;
+            text-align: center;
+            z-index: 2200;
+            font-size: 16px;
+            font-family: inherit;
+        }
+
+        #dropdown-contents:hover {
+            opacity: 1;
+            cursor: pointer;
+        }
+
+        @media (max-width: 749px) {
+            .sidebar {
+                box-shadow: none;
+                -webkit-border-radius: 0;
+                border-radius: 0;
+            }
+
+            #dropdown {
+                z-index: 2600;
+            }
+
+            #dropdown-contents {
+                left: 20px;
+                z-index: 2200;
+            }
+            #sidebar-content {
+                padding-top: 50px;
+            }
+        }
+        .leaflet-tooltip-left:before {
+            right: 0;
+            margin-right: -12px;
+            border-left-color: rgba(0, 0, 0, 0);
+        }
+        .leaflet-tooltip-right:before {
+            left: 0;
+            margin-left: -12px;
+            border-right-color: rgba(0, 0, 0, 0);
+        }
+        .leaflet-textTitle {
+            position: absolute;
+            padding: 1px 3px 1px 3px;
+            background-color: rgba(200, 200, 200, 0.95);
+            border: 0px solid #00000000;
+            color: #000;
+            white-space: nowrap;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            pointer-events: none;
+            box-shadow: none;
+        }
+        .leaflet-pane{
+            opacity: 1;
+            transition: opacity 500ms;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <div id="sidebar-right" class="sidebar"></div>
+    <div id="sidebar-left" class="sidebar"></div>
+    <!--
+    <div id="loading">
+        <div id="progressBox">
+            <div id="progressBg">
+                <div id="progressBar"></div>
+            </div>
+        </div>
+    </div>
+    -->
+
+    <script>// initialize the map
+
+        //progress counter for loading the interactive plan
+        //var elem = document.getElementById("progressBar");
+        const counter = {
+            count: 0,
+            update(count) {
+                count = Math.round(count * 100) / 100;
+                //elem.style.width = count + "%";
+                if (count >= 100) {
+                    //$('#loading').fadeOut(250);
+                    var allFeatures = getAllFeatures(map);
+                    if (allFeatures.length > 0) {
+                        zoomToFeature(allFeatures, webID);
+                    }
+                }
+            },
+            get progress() {
+                return this.count;
+            },
+            set progress(progress) {
+                this.count = progress;
+                this.update(this.count);
+            }
+        }
+
+        //state counter for which aspect of the map is being displayed
+        const state = {
+            state: 'QR',
+            bounds: mapbounds,
+            padding: 0,
+            visiblePane(show, hide, delay = null) {
+                if (delay == null) {
+                    delay = 0;
+                }
+                setTimeout(function() {
+                    map.getPane(hide).style.opacity = 0;
+                    map.getPane(show).style.opacity = 1;
+                    setTimeout(function() {
+                        map.getPane(hide).style.zIndex = 200;
+                        map.getPane(show).style.zIndex = 250;
+                    }, 1000);
+                }, delay);
+            },
+            update(select) {
+                switch(select) {
+                    case 'QR':
+                        if (txt.texts != null) {
+                            updateText("Introduction");
+                        }
+                        map.setMaxZoom(21);
+                        map.setMinZoom(17);
+                        this.visiblePane('basemap-pane', 'overdata-pane');
+                        document.getElementById('leaflet-refresh-container').style.display = 'none';
+                        document.getElementById('leaflet-basemap-toggle-container').style.display = 'block';
+                        _sidebar.setSidebar('right');
+                        updateWidth();
+                        break;
+                    case 'OPA':
+                        if (txt.texts != null) {
+                            updateText("OperationA");
+                        }
+                        map.setMaxZoom(23);
+                        map.setMinZoom(21);
+                        this.visiblePane('overdata-pane', 'basemap-pane', 1000);
+                        setTimeout(function() {
+                            document.getElementById('leaflet-refresh-container').style.display = 'block';
+                            document.getElementById('leaflet-basemap-toggle-container').style.display = 'none';
+                        }, 1500)
+                        _sidebar.setSidebar('left');
+                        updateWidth();
+                        break;
+                    case 'OPB':
+                        if (txt.texts != null) {
+                            updateText("OperationB");
+                        }
+                        map.setMaxZoom(23);
+                        map.setMinZoom(21);
+                        this.visiblePane('overdata-pane', 'basemap-pane', 1000);
+                        setTimeout(function() {
+                            document.getElementById('leaflet-refresh-container').style.display = 'block';
+                            document.getElementById('leaflet-basemap-toggle-container').style.display = 'none';
+                        }, 1500)
+                        _sidebar.setSidebar('right');
+                        updateWidth();
+                        break;
+                    default:
+                        break;
+                }
+                map.flyToBounds(this.bounds);
+            },
+            get select() {
+                return this.state;
+            },
+            set select(select) {
+                this.state = select;
+                this.update(this.state);
+            }
+        }
+
+        //checking orientation state, resetting on change
+        const orientation = {
+            orient: 'portrait',
+            state: 'portrait',
+            update(input) {
+                this.state = input;
+                updateWidth();
+                var allFeatures = getAllFeatures(map);
+                if (allFeatures.length > 0) {
+                    map.invalidateSize();
+                    zoomToFeature(allFeatures, webID);
+                }
+            },
+            get size() {
+                return this.orient;
+            },
+            set size(size) {
+                this.orient = size;
+                this.update(this.orient);
+            }
+        }        
+
+        //shapfile loading counter, starting map on all shapefiles loaded
+        const layerCounter = {
+            count: 0,
+            update() {
+                if (this.count == shpLayers.length) {
+                    addLayerGroups(
+                        mapInput = map,
+                        layerControl = control,
+                        layers = [...tileLayers, ...shpFiles],
+                        groups = generateLayerGroups({ groups: groups }),
+                        functionOnLoad = function () {
+                            getAllFeatures(map, true).forEach((v) => {
+                                v.bindTooltipDelayed(v.feature.properties.Name, 
+                                { sticky: true, className: 'leaflet-textTitle' });
+                            });
+                            //divCreate(divName = dropdownName, //adding dropdown to map
+                            //    divContainer = 'dropdown',
+                            //    type = 'select',
+                            //    functionOnCreate = function (newDiv) {
+                            //        //creating dropdown
+                            //        options = [...dropdownDefault, ...dropdownOptions(uniqueFeatures(getAllFeatures(null, control), 'fullName', 'Label'), 'WebCode', 'fullName')];
+                            //        options.forEach((option) => newDiv.innerHTML += option);
+                            //        //dropdown appearance/settings
+                            //        newDiv.addEventListener('change', onSelect);
+                            //        newDiv.title = "Select Monument Name to Zoom In";
+                            //    });
+                            var feats = [];
+                            ['Introduction', 'OperationA', 'OperationB'].forEach((f) => feats.push({Description: f, Url: url + f + "/QachRresh_" + f + '.txt'}));
+                            txt.loadText(feats); //loading and formatting text descriptions for monuments
+                            addRefresh(); //adding refresh button
+                            addRecenterControl(); //adding recentering control to map
+                            updateWidth(); //updating window width
+                            map.invalidateSize(); //recentering map in window
+                            map._size.x = roundWidth()[2];
+                            state.bounds = mapbounds;
+                        }
+                    );
+                    shp(baseshps.replaceAll('.shp', '')).then(function (out) {
+                        var over = L.geoJSON(out, {
+                            style: styleTransparent,
+                            onEachFeature: (feature, layer) => onEachFeature(feature, layer, true, 0.1),
+                            pane: 'click-pane'
+                        }).addTo(map);
+                        getAllFeatures(over, true).forEach((v) => {
+                            v.bindTooltipDelayed(v.feature.properties.Name, 
+                            { sticky: true, className: 'leaflet-textTitle' });
+                        });
+                    });
+                    operationTiles.forEach((t) => {
+                        L.tileLayer(t, {
+                            maxZoom: 24,
+                            minZoom: 17,
+                            tms: true,
+                            attribution: attribution,
+                            pane: 'overdata-pane'
+                        }).addTo(map);
+                    })
+                    operationShps.forEach((s) => {
+                        shp(s.replaceAll('.shp', '')).then(function (out) {
+                            var over = L.geoJSON(out, {
+                                style: styleTransparent,
+                                onEachFeature: (feature, layer) => onEachFeature(feature, layer),
+                                pane: 'overdata-pane'
+                            }).addTo(map);
+                            Object.values(over._layers).forEach((v) => {
+                                v.bindTooltipDelayed(v.feature.properties.Name, 
+                                {
+                                    sticky: true,
+                                    className: 'leaflet-textTitle' 
+                                });
+                            });
+                        });
+                    });
+                    
+                }
+            },
+            get iteration() {
+                return this.count;
+            },
+            set iteration(iteration) {
+                this.count = iteration;
+                this.update(this.count);
+            }
+        }
+
+        //setting initial map variables
+        var shpFiles = [];
+        var groups = [];
+        var tileLayers = [];
+        var shpLayers = [];
+        var attribution;
+        var dropdownName;
+
+        //setting description creation vars
+        var sidebarText = 'sidebar-content';
+        var url;
+        var defaultWebID = 'Introduction';
+        var webID = defaultWebID;
+        var descriptions;
+        var dropdownDefault = [];
+        var remove = [];
+        var replace = [];
+        var width = 'width="' + roundWidth()[1] + 'px"';
+        var w = window.innerWidth;
+        var layersCount = 0;
+
+        //pulling updated initialization vars
+        updateInputs();
+
+        //creating divs for parts of interactive plan
+        const _sidebar = {
+            side: 'right',
+            setSidebar(show) {
+                hide = null;
+                if (show == 'right') {
+                    hide = 'left';
+                } else {
+                    hide = 'right';
+                }
+                document.getElementById('sidebar-' + hide).style.width = '0px';
+                document.getElementById('sidebar-' + hide).style.padding = '0px';
+                if (show != this.side) {
+                    w = roundWidth();
+                    this.side = show;
+                    if (document.getElementById('sidebar-' + hide).firstChild != null) {
+                        node = document.getElementById('sidebar-' + hide).firstChild;
+                        document.getElementById('sidebar-' + show).appendChild(node);
+                    }
+                    if (show == 'right') {
+                        document.getElementById('map').style.left = '0px';
+                        document.getElementById('sidebar-' + show).firstChild.style.transform = null;
+                    } else {
+                        document.getElementById('map').style.left = w[0] + 'px';
+                        document.getElementById('sidebar-' + show).firstChild.style.transform = 'scaleX(-1)';
+                    }
+                    document.getElementById('sidebar-' + show).style.width = w[0] + 'px';
+                    document.getElementById('sidebar-' + show).style.padding = '10px';
+                }
+            }
+        };
+        divCreate(sidebarText, 'sidebar-' + _sidebar.side);
+
+        //creating map bounds
+        var mapbounds = L.latLngBounds(L.latLng(40.5005, 25.5312), L.latLng(40.5016, 25.5332));
+
+        //creating map variable & layer control
+        var map = L.map('map', {
+            center: [40.5011, 25.5322],
+            zoom: 18
+        });
+        var control = L.control.layers({}, null, { collapsed: false }).addTo(map);
+        control._container.id = 'leaflet-basemap-toggle-container';
+
+        map.createPane('basemap-pane');
+        map.getPane('basemap-pane').style.zIndex = 250;
+        map.createPane('overdata-pane');
+        map.getPane('overdata-pane').style.zIndex = 200;
+        map.createPane('click-pane');
+        map.getPane('click-pane').style.zIndex = 300;
+        map.getPane('basemap-pane').appendChild(map.getPane('click-pane'));
+
+        //setting bounds on load
+        state.padding = 0.1;
+        map.flyToBounds(mapbounds.pad(state.padding));
+        map.setMaxBounds(mapbounds.pad(1));
+        state.bounds = mapbounds;
+
+        //reading in shapefiles
+        shpLayers.forEach((s) => readSHPs(s));
+        
+        //listening for width change
+        ['resize', 'focus'].forEach(function (e) {
+            window.addEventListener(e, function () {
+                updateWidth();
+                setTimeout(function () {
+                    var orientate = 'landscape';
+                    if (window.innerWidth < window.innerHeight) {
+                        orientate = 'portrait';
+                    }
+                    if (orientate != orientation.state) {
+                        orientation.size = orientate;
+                    }
+                }, 100);
+            });
+        });
+
+        L.Layer.include({
+            bindTooltipDelayed: function (content, options) {
+                if (content instanceof L.Tooltip) {
+                    L.setOptions(content, options);
+                    this._tooltip = content;
+                    content._source = this;
+                } else {
+                    if (!this._tooltip || options) {
+                        this._tooltip = new L.Tooltip(options, this);
+                    }
+                    this._tooltip.setContent(content);
+                }
+                this._initTooltipInteractionsDelayed();
+                return this;
+            },
+            _initTooltipInteractionsDelayed: function () {
+                this.timer = null;
+                this.lat_lang = null;
+                this.on('mouseover', startTimer);
+                this.on('mousemove', hoverTimer);
+                this.on('click', stopTimer);
+                this.on('mouseout', stopTimer);
+        
+                function stopTimer (e, me = null) {
+                    if (e.type == 'click') {
+                        var tt = this._tooltip;
+                        this.unbindTooltip();
+                        this._tooltip = tt;
+                    }            
+                    var out = this;
+                    if (this == window && me != null) {
+                        out = me;
+                    }
+                    clearTimeout(out.timer);
+                    out.closeTooltip();
+                }
+                function startTimer (e) {
+                    this.timer = setTimeout(function() {}, 500);
+                }
+                function hoverTimer (e) {
+                    var lat_lang = e.latlng;
+                    clearTimeout(this.timer);
+                    stopTimer(e, this);
+                    var out = this;
+                    this.timer = setTimeout(function() {
+                        out.bindTooltip(out._tooltip._content).openTooltip(lat_lang);
+                    }, 500);
+                }
+            }
+        });
+
+        //FUNCTIONS THAT CREATE AND RUN THE RLIIM QACH RRESH INTERACTIVE MAP PLAN
+        //Jared Gingrich 2023
+
+        //update initial inputs for layers, groupings, urls, etc.
+        function updateInputs() {
+            groups = [["Elevation Model", "DEM"], ["Magnetometry", "MAG"]];
+            tileLayers = ['https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapTiles/DEM/{z}/{x}/{y}.png',
+            'https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapTiles/MAG/{z}/{x}/{y}.png'];
+            baseshps = 'https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/QR_Operations.shp';
+            operationShps = ['https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/OpA_Contexts.shp',
+            'https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/OpB_Contexts.shp'];
+            operationTiles = ['https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapTiles/OpA/{z}/{x}/{y}.png',
+            'https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapTiles/OpB/{z}/{x}/{y}.png'];
+            attribution = 'JAG2024 | <a href="https://scholarblogs.emory.edu/rliim/">Rural Landscapes of Iron Age Imperial Mesopotamia';
+            shpLayers = ['https://cdn.rawgit.com/jagingrich/samo_website/main/Data/mapFeatures/SamoWeb_RestoredStatePlan_Overlay.shp',
+                'https://cdn.rawgit.com/jagingrich/samo_website/main/Data/mapFeatures/SamoWeb_ActualStatePlan_Overlay.shp'];
+
+            dropdownName = 'dropdown-contents';
+            //setting description creation vars
+            url = 'https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapDescriptions/';
+            defaultWebID = 'Introduction';
+            dropdownDefault = ['<option value="' + defaultWebID + '" disabled selected hidden>Select Monument</option>',
+            '<option value="' + defaultWebID + '">About: Interactive Plan</option>'];
+            remove = ['JAG_UNEDITED', 'Glennon'];
+            replace = {key: 'Bibliography:', replacement: 'Bibliography: Selected Bibliography'};
+        }
+
+        //creating divs for parts of interactive plan in map, overlay divs
+        function divCreate(divName, divContainer, type = 'div', functionOnCreate = null) {
+            L.Control.newDiv = L.Control.extend({
+                addTo: function (placeholder) {
+                    // Attach new div to input container
+                    var container = L.DomUtil.get(placeholder);
+                    var newDiv = L.DomUtil.create(type, divName, container);
+                    L.DomEvent.disableClickPropagation(newDiv);
+                    newDiv.id = divName;
+
+                    if (functionOnCreate != null && typeof (functionOnCreate) == 'function') {
+                        functionOnCreate(newDiv);
+                    }           
+
+                    return this;
+                },
+                onRemove: function (placeholder) { }
+            });
+            var outDiv = new L.Control.newDiv();
+            outDiv.addTo(divContainer);
+        }
+
+        //formatting for tile layers
+        function tileLayer(url, setAttribution = false) {
+            if (setAttribution) {
+                return L.tileLayer(url, {
+                    maxZoom: 22,
+                    minZoom: 17,
+                    tms: true,
+                    attribution: attribution,
+                    pane: 'basemap-pane'
+                });
+            } else {
+                return L.tileLayer(url, {
+                    maxZoom: 22,
+                    minZoom: 17,
+                    tms: true,
+                    pane: 'basemap-pane'
+                });
+            }
+        }
+
+        //formatting for json overlay layers
+        function jsonLayer(json) {
+            return L.geoJSON(json, {
+                style: styleTransparent,
+                onEachFeature: onEachFeature
+            });
+        }
+
+        //transparent overlay layer style
+        function styleTransparent() {
+            return {
+                fillColor: '#00000000',
+                weight: 2,
+                opacity: 0.85,
+                color: '#FFF',
+                fillOpacity: 0
+            }
+        }
+
+        //mouseover highlight behavior and highlight reset
+        function highlightFeature(e) {
+            e.target.setStyle({
+                fillColor: '#FFF',
+                weight: 2.5,
+                opacity: 1,
+                color: '#FFF',
+                dashArray: '',
+                fillOpacity: 0.25
+            });
+
+            if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+                e.target.bringToFront();
+            }
+        }
+
+        //this is the reset
+        function resetHighlight(e) {
+            e.target.setStyle(styleTransparent());
+        }
+
+        //zoom to feature from given code
+        function zoomToFeature(features, webCode) {
+            if (webCode != defaultWebID) {
+                //select objects
+                var selected = [];
+                features.forEach(function (f) {
+                    if (f.properties.WebCode == webCode) {
+                        selected.push(L.geoJSON(f));
+                    }
+                });
+
+                //zoom to bounds
+                map.flyToBounds(L.featureGroup(selected).getBounds().pad(state.padding));
+            }
+            else {
+                //zoom to all map bounds
+                map.flyToBounds(mapbounds.pad(state.padding));
+            }
+        }
+
+        //selecting feature: click or dropdown
+        function selectFeature(webCode, fitZoom = false, padding = 0) {
+            //update text and dropdown
+            //updateText(webCode);
+            console.log(webCode.target.feature.properties.WebCode);
+
+            //zoom to selection
+            if (padding != 0) {
+                state.padding = padding;
+            }
+            if (fitZoom) {
+                state.bounds = webCode.target.getBounds();
+                map.setMaxBounds(webCode.target.getBounds().pad(1));
+            }
+            state.select = webCode.target.feature.properties.WebCode;
+            map.flyToBounds(webCode.target.getBounds().pad(padding));
+        }
+
+        //layer responsiveness
+        function onEachFeature(feature, layer, fitZoom = false, padding = 0) {
+            layer.on({
+                mouseover: highlightFeature,
+                mouseout: resetHighlight,
+                click: (e, event) => selectFeature(e, fitZoom, padding)
+            });
+        }
+
+        //on changing dropdown selection
+        function onSelect() {
+            var dropdown = document.getElementById(dropdownName);
+            var index = dropdown.options.selectedIndex;
+            if (dropdown[index].value == defaultWebID) {
+                selectFeature(defaultWebID)
+            } else {
+                selectFeature(dropdown[index].value);
+            }
+        }
+
+        //updating text and dropdown selection
+        function updateText(webCode) {
+            //update text output code
+            webID = webCode;
+            updateOutput(sidebarText, webID);
+            updateWidth();
+
+            //update dropdown
+            if (document.getElementById(dropdownName)) {
+                var dropdown = document.getElementById(dropdownName);
+                dropdown.value = webID;
+            }
+        }
+
+        //finding all features in map
+        function getAllFeatures(inputs, leaflet = false) {
+            var feats = [];
+            function checkLayers(obj, out) {
+                if (Object.keys(obj).includes('_layers')) {
+                    Object.values(obj._layers).forEach(function (f) {
+                        if (Object.keys(f).includes('feature') && !out.includes(f.feature)) {
+                            if (leaflet) {
+                                out.push(f);
+                            } else {
+                                out.push(f.feature);
+                            }                            
+                        }
+                    });
+                }
+            }
+            function checkInputs(obj) {
+                if (Array.isArray(obj._layers)){
+                    obj._layers.forEach((l) => {
+                        Object.values(l.layer._layers).forEach(function (s) {
+                            checkLayers(s, feats);
+                        });
+                    });
+                } else if (typeof (obj) == 'object') {
+                    checkLayers(obj, feats);
+                }
+            }
+            if (Array.isArray(inputs)){
+                inputs.forEach((i) => {
+                    checkInputs(i);
+                });
+            } else if (typeof (inputs) == 'object') {
+                checkInputs(inputs);
+            }
+            return feats;
+        }
+
+        //layer groups from names and keywords
+        function generateLayerGroups({ groups = [[groupName = null, keyword = null]] }) {
+            var laygroups = []
+            groups.forEach(function (g) {
+                laygroups.push({ name: g[0], keyword: g[1], layers: L.layerGroup() });
+            });
+            laygroups.push({ name: 'Other', keyword: 'Missing', layers: L.layerGroup() });
+            return laygroups;
+        }
+
+        function addLayerGroups(mapInput, layerControl, layers, groups, functionOnLoad = null) {
+            //type of layers
+            var tiles = [];
+            var shps = [];
+            layers.forEach(function (l) {
+                if (typeof (l) == 'string' && l.match('{z}/{x}/{y}.png') != null) {
+                    tiles.push(l);
+                }
+                if (typeof (l) == 'object' && l.type == "FeatureCollection") {
+                    shps.push(l);
+                }
+            });
+
+            //add layerGroups to map
+            function addLayers(mapInput, layerGroups, layerControl) {
+                var count = 0;
+                if (layerControl != null) {
+                    groups.forEach(function (g) {
+                        if (g.name != 'Other') {
+                            if (count == 0) {
+                                layerControl.addBaseLayer(g.layers.addTo(mapInput), g.name);
+                                count++;
+                            }
+                            else {
+                                layerControl.addBaseLayer(g.layers, g.name);
+                            }
+                        }
+                        if (g.name == 'Other') {
+                            g.layers.addTo(mapInput);
+                        }
+                    })
+                } else {
+                    groups.forEach(function (g) {
+                        g.layers.addTo(mapInput);
+                    })
+                }
+            }
+
+            //tile layers to groups
+            tiles.forEach(function (t) {
+                var match = false;
+                groups.forEach(function (g) {
+                    if (g.name != 'Other') {
+                        if (t.match(g.keyword) != null) {
+                            tileLayer(t, true).addTo(g.layers);
+                            match = true;
+                        }
+                    }
+                    if (g.name == 'Other') {
+                        out = t;
+                        groups.forEach((gs) => {
+                            if (gs.keyword != 'Missing') {
+                                if (t.match(gs.keyword) != null) {
+                                    out = null;
+                                }
+                            }
+                        });
+                        if (out != null) {
+                            tileLayer(t, true).addTo(map);
+                        }
+                    }
+                });
+                if (!match) {
+                    tileLayer(t, true).addTo(groups[groups.findIndex((element) => element.name == "Other")].layers)
+                }
+                layersCount++;
+                updateProgress(tileLayers.length + shpFiles.length + 1);
+            });
+
+            //shp layers to groups
+            shps.forEach(function (s) {
+                var match = false;
+                groups.forEach(function (g) {
+                    if (g.name != 'Other') {
+                        if (s.name.match(g.keyword) != null) {
+                            //jsonLayer(s).addTo(g.layers);
+                            match = true;
+                        }
+                    }
+                });
+                if (!match) {
+                    //jsonLayer(s).addTo(groups[groups.findIndex((element) => element.name == "Other")].layers)
+                }
+                layersCount++;
+                updateProgress(tileLayers.length + shpFiles.length + 1);
+            });
+            addLayers(mapInput, groups, layerControl);
+
+            if (functionOnLoad != null && typeof (functionOnLoad) == 'function') {
+                functionOnLoad();
+            }
+        }
+
+        //ajax request for SHPfile data
+        function readSHPs(url) {
+            url = url.replaceAll('.shp', '');
+            $.ajax({
+                url: url + '.shp',
+                type: "head",
+                success: function () {
+                    shp(url).then(function (out) {
+                        out.name = url.split('/')[url.split('/').length - 1];
+                        out.features.forEach((f) => f.properties.fullName = '(' + f.properties.Label + ') ' + f.properties.Name);
+                        shpFiles.push(out);
+                        layerCounter.iteration++;
+                    });
+                },
+                error: function () {
+                    layerCounter.iteration++;
+                }
+            });
+        }
+
+        //creating legend
+        function addLegend() {
+            var legend = L.control({ position: 'bottomleft' });
+            legend.onAdd = function (map) {
+
+                var div = L.DomUtil.create('div', 'info legend'),
+                    grades = [1, 2, 3, 4, 5, 6],
+                    labels = ['Late fifth to early fourth century BCE',
+                        'Late fourth century BCE',
+                        'Third century BCE',
+                        'Second to first century BCE',
+                        'First to second century CE',
+                        'Post Antique'];
+
+                for (var i = 0; i < grades.length; i++) {
+                    div.innerHTML +=
+                        '<i style="background:' + getColor(grades[i]) + '"></i> ' + labels[i] + '<br>';
+                }
+
+                return div;
+            };
+
+            //phasing and legend colors
+            function getColor(d) {
+                return d == "1" ? '#94d1e7' :
+                    d == "2" ? '#007abc' :
+                    d == "3" ? '#00a33c' :
+                    d == "4" ? '#ff871f' :
+                    d == "5" ? '#ff171F' :
+                    d == "6" ? '#fdf500' :
+                            '#00000000';
+            }
+
+            legend.addTo(map);
+        }
+
+        //creating refresh button control
+        function addRefresh() {
+            L.Control.Button = L.Control.extend({
+                options: {
+                    position: 'topright'
+                },
+                onAdd: function (map) {
+                    var container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+                    var button = L.DomUtil.create('a', 'leaflet-control-button', container);
+                    L.DomEvent.disableClickPropagation(button);
+                    L.DomEvent.on(button, 'click', function () {
+                        state.bounds = mapbounds;
+                        state.padding = 0.1;
+                        map.setMaxBounds(mapbounds.pad(1));
+                        state.select = "QR";
+                    });
+
+                    container.id = "leaflet-refresh-container";
+                    button.id = "leaflet-refresh-button";
+                    button.title = "Zoom Out to Site Map";
+                    button.innerHTML = 'View Site';
+
+                    return container;
+                },
+                onRemove: function (map) { },
+            });
+            var control = new L.Control.Button();
+            control.addTo(map);
+        }
+
+        //creating recenter button control
+        function addRecenterControl() {
+            leaflet.Control.Recenter = leaflet.Control.extend({
+                options: {
+                    position: 'topleft',
+                    title: 'Recenter'
+                },
+                _createButton: function (title, className, content, container, context) {
+                    this.link = leaflet.DomUtil.create('a', className, container);
+                    this.link.href = '#';
+                    this.link.title = title;
+                    this.link.innerHTML = content;
+
+                    this.link.setAttribute('role', 'button');
+                    this.link.setAttribute('aria-label', title);
+
+                    L.DomEvent.disableClickPropagation(container);
+
+                    L.DomEvent.on(this.link, 'click', function () {
+                        map.flyToBounds(state.bounds.pad(state.padding));
+                    });
+
+                    return this.link;
+                },
+
+                onAdd: function (map) {
+                    var className = 'leaflet-control-zoom-selection', container, content = '';
+
+                    container = map.zoomControl._container;
+
+                    if (this.options.content) {
+                        content = this.options.content;
+                    } else {
+                        className += ' recenter-icon';
+                    }
+
+                    this._createButton(this.options.title, className, content, container, this);
+                    this._map.recenter = this;
+
+                    return container;
+                }
+            })
+            var zoomTo = new L.Control.Recenter();
+            zoomTo.addTo(map);
+        }
+
+        //creating listener for screen width change & update accordingly
+        function roundWidth() {
+            const q = window.innerWidth;
+            const tops = Array.from(document.getElementsByClassName('leaflet-top'));
+            var topWidth = 10 * tops.length;
+            tops.forEach((f) => topWidth += f.clientWidth);
+            if (window.innerWidth < window.innerHeight) {
+                return [q, q - 40, q, q - 40];
+            }
+            else {
+                return q < 750 ? [q, q - 40, q, q - 40] :
+                    q < 900 ? [355, 315, q - 355, q - 355 - topWidth] :
+                    q < 1050 ? [425, 385, q - 425, q - 425 - topWidth] :
+                    q < 1200 ? [490, 450, q - 490, q - 490 - topWidth] :
+                    q < 1350 ? [550, 510, q - 550, q - 550 - topWidth] :
+                                [605, 565, q - 605, q - 605 - topWidth];
+            }
+        }
+
+        function updateWidth() {
+            var oldWidth = width;
+            var w = roundWidth();
+            width = 'width="' + w[1] + 'px"'; 
+            if (_sidebar.side == 'left') {
+                document.getElementById('map').style.left = w[0] + 'px';
+            }
+            document.getElementById('map').style.width = w[2] + 'px';
+            document.getElementById('sidebar-' + _sidebar.side).style.width = w[0] + 'px';
+            if (document.getElementById(sidebarText)) {
+                Array.from(document.getElementsByClassName('image')).forEach((i) => {
+                    i.style.width = w[1] + 'px';
+                });
+                document.getElementById(sidebarText).style.width = w[1] + 'px';
+            }
+            if (document.getElementById('dropdown-contents')) {
+                document.getElementById('dropdown-contents').style.width = w[3] + 'px';
+            }
+        }
+
+        //function for unique features from JSON input
+        function uniqueFeatures(features, id, sort = null, sortType = 'Number') {
+            var feats = [];
+            var ids = [];
+            features.forEach(function (f) {
+                if (!ids.includes(f.properties[id])) {
+                    feats.push(f);
+                    ids.push(f.properties[id])
+                }
+            });
+            if (sort != null) {
+                function fixSortKey(input) {
+                    switch (sortType) {
+                        case 'Number':
+                            var out = input;
+                            out = out.split("-")[0];
+                            out = out.replace("a", ".2");
+                            out = out.replace("b", ".5");
+                            return Number(out);
+                        case 'String':
+                            return String(input);
+                        default:
+                            return input;
+                    }
+                }
+                feats.sort(function (a, b) {
+                    var keyA = fixSortKey(a.properties[sort]);
+                    var keyB = fixSortKey(b.properties[sort]);
+                    if (keyA < keyB) return -1;
+                    if (keyA > keyB) return 1;
+                    return 0;
+                });
+            }
+            return feats;
+        }
+
+        //generating dropdown menu options from JSON inputs
+        function dropdownOptions(inputs, value, text) {
+            var optionsOut = [];
+            inputs.forEach((f) => optionsOut.push('<option value="' + f.properties[value] + '">' + f.properties[text] + '</option>'))
+            return optionsOut;
+        }
+
+        //html formating for text strings
+        //formatting methods
+        const formatText = {
+            categories: {},
+            defaultOptions: {},
+            options: {},
+            texts: {},
+            count: {total: 0, outOf: null, counting: false},
+            remove: [],
+            replace: [],
+            header: null,
+            footer: null,
+            addCategory(_class, options = {}, setOptions = {}, resetOptions = true){
+                newDiv = document.createElement('div');
+                newDiv.value = _class;
+                //default options
+                Object.entries(this.defaultOptions).forEach((o) => {
+                    newDiv.style[o[0]] = o[1];
+                });
+                //applying div formatting for class
+                Object.entries(options).forEach((o) => {
+                    newDiv.style[o[0]] = o[1];
+                });
+                //set div class
+                this.categories[_class] = {cat: newDiv, setOptions: setOptions, resetOptions: resetOptions};
+            },
+            addDiv(_class, innerHTML = null, src = null){
+                var cat;
+                if (this.categories[_class]) {
+                    cat = this.categories[_class];
+                } else {
+                    cat = this.categories['_default'];
+                }
+                var out = cat.cat.cloneNode(true);
+                //resetting div formatting if true
+                if(cat.resetOptions) {
+                    this.options = {};
+                }
+                //updating div formatting
+                Object.entries(this.options).forEach((o) => {
+                    out.style[o[0]] = o[1];
+                });
+                //setting formatting for next div if present
+                if(Object.keys(cat.setOptions).length != 0) {
+                    this.options = cat.setOptions;
+                }
+                //adding text
+                if (innerHTML != null) {
+                    out.innerHTML = innerHTML;
+                }
+                //adding an image, if src is provided
+                if (src != null) {
+                    container = document.createElement('div');
+                    imgDiv = document.createElement('img');
+                    imgDiv.src = src;
+                    imgDiv.className = 'image';
+                    container.appendChild(imgDiv);
+                    container.appendChild(out);
+                    return container;
+                } else {
+                    return out;
+                }
+                
+            },
+            pullTextAndFormat(desc, url){
+                const parent = this;
+                $.ajax({
+                    url: url,
+                    dataType: "text"
+                }).then(function(response) {
+                    //splitting and cleaning text
+                    out = response.split(/\r\n|\r|\n/); //split on line breaks
+                    //removing lines based on input remove keywords
+                    if (Array.isArray(parent.remove)){
+                        parent.remove.forEach((r) => {
+                            out = out.filter(x => x.match(r) == null);
+                        });
+                    } else if (typeof (parent.remove) == 'string') {
+                        out = out.filter(x => x.match(parent.remove) == null);
+                    }
+                    //replacing lines based on input replace keywords and replacement lines
+                    if (Array.isArray(parent.replace)){
+                        parent.replace.forEach((r) => {
+                            out.forEach((item, i) => { if (item.match(r.key) != null) out[i] = r.replacement; });
+                        });
+                    } else if (typeof (parent.replace) == 'object') {
+                        out.forEach((item, i) => { if (item.match(parent.replace.key) != null) out[i] = parent.replace.replacement; });
+                    }
+                    //generating linetype codes from line headers
+                    var capCount = 1;
+                    out.forEach((item, i) => {
+                        //splitting off code
+                        var code = item.split(' ')[0];
+                        if (code.match(":") != null) {
+                            newLine = {Code: code.replace(':', ''), Text: item.replace(code, '').trim()};
+                            //code case for images
+                            if (Array.isArray(parent.imageCode)){ //multiple image codes
+                                parent.imageCode.forEach((r) => {
+                                    if (newLine.Code == r) {
+                                        newLine.src = url.replace('.txt', '_Image' + capCount + '.jpg');
+                                        capCount++;
+                                    }
+                                });
+                            } else if (typeof (parent.imageCode) == 'string') { //single image code
+                                if (newLine.Code == parent.imageCode) {
+                                    newLine.src = url.replace('.txt', '_Image' + capCount + '.jpg');
+                                    capCount++;
+                                }
+                            }
+                            out[i] = newLine;
+                        } else { //defaults: strings vs. empty strings
+                            if (item.trim().length === 0) {
+                                newLine = {Code: '_space', Text: item.trim()};
+                            } else {
+                                newLine = {Code: '_default', Text: item.trim()};
+                            }
+                            out[i] = newLine;
+                        }
+                    });
+                    //removing white space at top and bottom of text
+                    while(out[0].Code == '_space' ) { //space at top
+                        out.shift();
+                    }
+                    //space at bottom
+                    while(out[(out.length - 1)].Code == '_space' && out[(out.length - 2)].Code == '_space') {
+                        out.pop();
+                    }
+                    //adding header to each text if provided
+                    if (parent.header != null && parent.header.length > 0){
+                        var header = [];
+                        if (Array.isArray(parent.header)){
+                            parent.header.forEach((h) => {
+                                header.push({Code: '_header', Text: h});
+                            });
+                        } else if (typeof (parent.header) == 'string') {
+                            header.push({Code: '_header', Text: parent.header});
+                        }
+                        out = [...header, ...out];
+                    }
+                    //adding footer to each text if provided
+                    if (parent.footer != null && parent.footer.length > 0){
+                        if (Array.isArray(parent.footer)){
+                            parent.footer.forEach((f) => {
+                                out.push({Code: '_footer', Text: f});
+                            });
+                        } else if (typeof (parent.footer) == 'string') {
+                            out.push({Code: '_footer', Text: parent.footer});
+                        }
+                    }
+                    //formatting text lines as html divs
+                    var outDiv = document.createElement('div');
+                    //formatting each text output based on text code
+                    out.slice().forEach((o) => {
+                        var newChild = txt.addDiv(o.Code, o.Text, o.src);
+                        if (JSON.stringify(o.Text.substring(0,1)) == JSON.stringify('\t')) {
+                            newChild.style.textIndent = '36px';
+                        }
+                        outDiv.appendChild(newChild);
+                    });
+                    
+                    //output
+                    parent.texts[desc] = {WebCode: desc, Text: out, Div: outDiv, Url: url};
+                }).always(function(){
+                    if (parent.count.counting) {
+                        parent.newText = parent.newText + 1;
+                    }
+                });
+            },
+            loadText(inputs) {
+                //reading text descriptions for each item in inputs
+                if (Array.isArray(inputs)){
+                    this.count.outOf = inputs.length;
+                    this.count.counting = true;
+                    inputs.forEach((f) => {
+                        this.pullTextAndFormat(f.Description, f.Url);
+                    });
+                } else if (typeof (inputs) == 'object') {
+                    this.count.outOf = Object.keys(inputs).length;
+                    this.count.counting = true;
+                    Object.values(inputs).forEach((f) => {
+                        this.pullTextAndFormat(f.Description, f.Url);
+                    });
+                }
+            },
+            _onLoad(){},
+            update(text){
+                if (this.count.total == this.count.outOf){
+                    this._onLoad();
+                    this.count.counting = false;
+                }
+            },
+            newFormat(){
+                var newObj = jQuery.extend(true, {}, this);
+                Object.defineProperty(newObj, 'newText', {
+                    get: function() {
+                        return this.count.total;
+                    },
+                    set: function(newProp) {
+                        this.count.total = newProp;
+                        this.update(newProp);
+                    },
+                    enumerable: true
+                });
+                newObj.addCategory('_default');
+                newObj.addCategory('_space');
+                newObj.addCategory('_header');
+                newObj.addCategory('_footer');
+                return newObj;
+            }
+        }
+
+        //creating text reader/formatter
+        const txt = formatText.newFormat();
+
+        //setting format parameters
+        txt.defaultOptions = {fontSize: '14px'};
+        txt.remove = remove;
+        txt.replace = replace;
+        txt.imageCode = 'Caption';
+        txt.addCategory('Title', {fontSize: '30px', fontWeight: 'bold'});
+        txt.addCategory('Monument', {fontSize: '30px', fontWeight: 'bold'});
+        txt.addCategory('Header', {fontSize: '24px', fontWeight: 'bold'});
+        txt.addCategory('Subheader', {fontWeight: 'bold'});
+        txt.addCategory('Part', {fontWeight: 'bold'});
+        txt.addCategory('Bibliography', {fontSize: '18px', fontWeight: 'bold'}, {fontSize: '11px', textIndent: '-36px', paddingLeft: '36px'});
+        txt.addCategory('Date', {fontSize: '11px'});
+        txt.addCategory('Material', {fontSize: '11px'});
+        txt.addCategory('Location', {fontSize: '11px'});
+        txt.addCategory('Caption', {fontSize: '11px'});
+        txt.addCategory('_footer', {fontSize: '10px'});
+        txt.addCategory('_default', {}, {}, false);
+        txt.addCategory('_space', {height: '20px'}, {}, false);
+        txt._onLoad = function () {
+            updateProgress(tileLayers.length + shpFiles.length + 1);
+            state.select = "QR";
+            //updateOutput(sidebarText, defaultWebID);
+            updateWidth(); //updating window width
+        }   
+
+        //reseting scroll position on layer click
+        function resetScroll() {
+            window.setTimeout(() => {
+                document.getElementById("sidebar-right").scrollTop = 0;
+            }, 1);
+        }
+
+        //packaged function for updating sidebar output
+        function updateOutput(updateDiv, desc) {
+            //loading text to sidebar
+            if (document.getElementById(updateDiv).firstChild) {
+                document.getElementById(updateDiv).firstChild.remove();
+            }
+            document.getElementById(updateDiv).appendChild(txt.texts[desc].Div.cloneNode(true));
+            //reset scroll position
+            setTimeout(function () {
+                resetScroll();
+            }, 10);
+        }
+
+        //updating progress bar as layers/descriptions load
+        function updateProgress(segments) {
+            var id = setInterval(frame, 10);
+            var iter = 0;
+            function frame() {
+                if (iter < 100) {
+                    counter.progress += 1 / segments;
+                    iter++;
+                } else {
+                    clearInterval(id);
+                }
+            }
+            
+        }
+    </script>
+</body>
+</html>

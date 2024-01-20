@@ -390,6 +390,7 @@
         //shapfile loading counter, starting map on all shapefiles loaded
         const layerCounter = {
             shapes: {},
+            tiles: {},
             layers: [],
             count: 0,
             target: 0,
@@ -407,7 +408,7 @@
                     updateProgress(1, 3);
                     var tilegroups = [];
                     tileLayers.forEach(t => {
-                        tilegroups.push(allTiles[t]);
+                        tilegroups.push(this.tiles[t]);
                     });
                     addLayerGroups(
                         mapInput = map,
@@ -468,7 +469,7 @@
                     });
                     var tileops = [];
                     operationTiles.forEach(t => {
-                        tileops.push(allTiles[t]);
+                        tileops.push(this.tiles[t]);
                     });
                     function opLayer(url) {
                         url.options.maxZoom = 24;
@@ -587,10 +588,9 @@
         shpLayers.forEach(s => readSHPs(s));
 
         //loading tile layers
-        allTiles = {};
         function loadTiles(tiles) {
             tiles.forEach(t => {
-                allTiles[t] = L.tileLayer(t, {
+                layerCounter.tiles[t] = L.tileLayer(t, {
                     tms: true
                 });
                 layerCounter.iteration++;

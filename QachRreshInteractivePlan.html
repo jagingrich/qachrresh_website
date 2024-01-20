@@ -16,6 +16,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
     <script src="https://unpkg.com/shpjs@latest/dist/shp.js"></script>
 
+    <script src="https://cdn.jsdelivr.net/gh/jagingrich/qachrresh_website/Data/mapCode/formatText_js.js"></script>
+
     <style>
         html, body {
             height: 100%;
@@ -37,7 +39,7 @@
             z-index: 3000;
             height: 100%;
             width: 100%;
-            background: white;
+            background: black;
         }
 
         #progressBox {
@@ -56,7 +58,7 @@
         #progressBg {
             width: 100%;
             height: 15px;
-            background-color: #9c9c9c;
+            background-color: #727272;
             color: white;
             border-radius: inherit;
             border-width: 0px;
@@ -65,7 +67,7 @@
         #progressBar {
             width: 0%;
             height: 15px;
-            background-color: #00ccff;
+            background-color: #0d9700;
             color: white;
             border-radius: inherit;
             border-width: 0px;
@@ -267,7 +269,6 @@
     <div id="map"></div>
     <div id="sidebar-right" class="sidebar"></div>
     <div id="sidebar-left" class="sidebar"></div>
-    <!--
     <div id="loading">
         <div id="progressBox">
             <div id="progressBg">
@@ -275,19 +276,18 @@
             </div>
         </div>
     </div>
-    -->
 
     <script>// initialize the map
 
         //progress counter for loading the interactive plan
-        //var elem = document.getElementById("progressBar");
+        var elem = document.getElementById("progressBar");
         const counter = {
             count: 0,
             update(count) {
                 count = Math.round(count * 100) / 100;
-                //elem.style.width = count + "%";
+                elem.style.width = count + "%";
                 if (count >= 100) {
-                    //$('#loading').fadeOut(250);
+                    $('#loading').fadeOut(250);
                     var allFeatures = getAllFeatures(map);
                     if (allFeatures.length > 0) {
                         zoomToFeature(allFeatures, webID);
@@ -401,13 +401,14 @@
 
         //shapfile loading counter, starting map on all shapefiles loaded
         const layerCounter = {
+            shapes: {},
             count: 0,
             update() {
                 if (this.count == shpLayers.length) {
                     addLayerGroups(
                         mapInput = map,
                         layerControl = control,
-                        layers = [...tileLayers, ...shpFiles],
+                        layers = tileLayers,
                         groups = generateLayerGroups({ groups: groups }),
                         functionOnLoad = function () {
                             getAllFeatures(map, true).forEach((v) => {
@@ -436,29 +437,20 @@
                             state.bounds = mapbounds;
                         }
                     );
-                    shp(baseshps.replaceAll('.shp', '')).then(function (out) {
-                        var over = L.geoJSON(out, {
-                            style: styleTransparent,
-                            onEachFeature: (feature, layer) => onEachFeature(feature, layer, true, 0.1),
-                            pane: 'click-pane'
-                        }).addTo(map);
-                        getAllFeatures(over, true).forEach((v) => {
-                            v.bindTooltipDelayed(v.feature.properties.Name, 
-                            { sticky: true, className: 'leaflet-textTitle' });
-                        });
-                    });
-                    operationTiles.forEach((t) => {
-                        L.tileLayer(t, {
-                            maxZoom: 24,
-                            minZoom: 17,
-                            tms: true,
-                            attribution: attribution,
-                            pane: 'overdata-pane'
-                        }).addTo(map);
-                    })
-                    operationShps.forEach((s) => {
-                        shp(s.replaceAll('.shp', '')).then(function (out) {
-                            var over = L.geoJSON(out, {
+                    Object.values(layerCounter.shapes).forEach((s) => {
+                        if(s.name == 'QR_Operations') {
+                            var over = L.geoJSON(s, {
+                                style: styleTransparent,
+                                onEachFeature: (feature, layer) => onEachFeature(feature, layer, true, 0.1),
+                                pane: 'click-pane'
+                            }).addTo(map);
+                            getAllFeatures(over, true).forEach((v) => {
+                                v.bindTooltipDelayed(v.feature.properties.Name, 
+                                { sticky: true, className: 'leaflet-textTitle' });
+                            });
+                        }
+                        else {
+                            var over = L.geoJSON(s, {
                                 style: styleTransparent,
                                 onEachFeature: (feature, layer) => onEachFeature(feature, layer),
                                 pane: 'overdata-pane'
@@ -470,9 +462,17 @@
                                     className: 'leaflet-textTitle' 
                                 });
                             });
-                        });
+                        }
                     });
-                    
+                    operationTiles.forEach((t) => {
+                        L.tileLayer(t, {
+                            maxZoom: 24,
+                            minZoom: 17,
+                            tms: true,
+                            attribution: attribution,
+                            pane: 'overdata-pane'
+                        }).addTo(map);
+                    })
                 }
             },
             get iteration() {
@@ -644,23 +644,21 @@
             groups = [["Elevation Model", "DEM"], ["Magnetometry", "MAG"]];
             tileLayers = ['https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapTiles/DEM/{z}/{x}/{y}.png',
             'https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapTiles/MAG/{z}/{x}/{y}.png'];
-            baseshps = 'https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/QR_Operations.shp';
-            operationShps = ['https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/OpA_Contexts.shp',
-            'https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/OpB_Contexts.shp'];
             operationTiles = ['https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapTiles/OpA/{z}/{x}/{y}.png',
             'https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapTiles/OpB/{z}/{x}/{y}.png'];
             attribution = 'JAG2024 | <a href="https://scholarblogs.emory.edu/rliim/">Rural Landscapes of Iron Age Imperial Mesopotamia';
-            shpLayers = ['https://cdn.rawgit.com/jagingrich/samo_website/main/Data/mapFeatures/SamoWeb_RestoredStatePlan_Overlay.shp',
-                'https://cdn.rawgit.com/jagingrich/samo_website/main/Data/mapFeatures/SamoWeb_ActualStatePlan_Overlay.shp'];
+            shpLayers = ['https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/QR_Operations.shp',
+            'https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/OpA_Contexts.shp',
+            'https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/OpB_Contexts.shp'];
 
-            dropdownName = 'dropdown-contents';
+            //dropdownName = 'dropdown-contents';
             //setting description creation vars
             url = 'https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapDescriptions/';
             defaultWebID = 'Introduction';
-            dropdownDefault = ['<option value="' + defaultWebID + '" disabled selected hidden>Select Monument</option>',
-            '<option value="' + defaultWebID + '">About: Interactive Plan</option>'];
-            remove = ['JAG_UNEDITED', 'Glennon'];
-            replace = {key: 'Bibliography:', replacement: 'Bibliography: Selected Bibliography'};
+            //dropdownDefault = ['<option value="' + defaultWebID + '" disabled selected hidden>Select Monument</option>',
+            //'<option value="' + defaultWebID + '">About: Interactive Plan</option>'];
+            //remove = ['JAG_UNEDITED', 'Glennon'];
+            //replace = {key: 'Bibliography:', replacement: 'Bibliography: Selected Bibliography'};
         }
 
         //creating divs for parts of interactive plan in map, overlay divs
@@ -967,7 +965,7 @@
                     shp(url).then(function (out) {
                         out.name = url.split('/')[url.split('/').length - 1];
                         out.features.forEach((f) => f.properties.fullName = '(' + f.properties.Label + ') ' + f.properties.Name);
-                        shpFiles.push(out);
+                        layerCounter.shapes[out.name] = out;
                         layerCounter.iteration++;
                     });
                 },
@@ -1172,215 +1170,6 @@
         }
 
         //html formating for text strings
-        //formatting methods
-        const formatText = {
-            categories: {},
-            defaultOptions: {},
-            options: {},
-            texts: {},
-            count: {total: 0, outOf: null, counting: false},
-            remove: [],
-            replace: [],
-            header: null,
-            footer: null,
-            addCategory(_class, options = {}, setOptions = {}, resetOptions = true){
-                newDiv = document.createElement('div');
-                newDiv.value = _class;
-                //default options
-                Object.entries(this.defaultOptions).forEach((o) => {
-                    newDiv.style[o[0]] = o[1];
-                });
-                //applying div formatting for class
-                Object.entries(options).forEach((o) => {
-                    newDiv.style[o[0]] = o[1];
-                });
-                //set div class
-                this.categories[_class] = {cat: newDiv, setOptions: setOptions, resetOptions: resetOptions};
-            },
-            addDiv(_class, innerHTML = null, src = null){
-                var cat;
-                if (this.categories[_class]) {
-                    cat = this.categories[_class];
-                } else {
-                    cat = this.categories['_default'];
-                }
-                var out = cat.cat.cloneNode(true);
-                //resetting div formatting if true
-                if(cat.resetOptions) {
-                    this.options = {};
-                }
-                //updating div formatting
-                Object.entries(this.options).forEach((o) => {
-                    out.style[o[0]] = o[1];
-                });
-                //setting formatting for next div if present
-                if(Object.keys(cat.setOptions).length != 0) {
-                    this.options = cat.setOptions;
-                }
-                //adding text
-                if (innerHTML != null) {
-                    out.innerHTML = innerHTML;
-                }
-                //adding an image, if src is provided
-                if (src != null) {
-                    container = document.createElement('div');
-                    imgDiv = document.createElement('img');
-                    imgDiv.src = src;
-                    imgDiv.className = 'image';
-                    container.appendChild(imgDiv);
-                    container.appendChild(out);
-                    return container;
-                } else {
-                    return out;
-                }
-                
-            },
-            pullTextAndFormat(desc, url){
-                const parent = this;
-                $.ajax({
-                    url: url,
-                    dataType: "text"
-                }).then(function(response) {
-                    //splitting and cleaning text
-                    out = response.split(/\r\n|\r|\n/); //split on line breaks
-                    //removing lines based on input remove keywords
-                    if (Array.isArray(parent.remove)){
-                        parent.remove.forEach((r) => {
-                            out = out.filter(x => x.match(r) == null);
-                        });
-                    } else if (typeof (parent.remove) == 'string') {
-                        out = out.filter(x => x.match(parent.remove) == null);
-                    }
-                    //replacing lines based on input replace keywords and replacement lines
-                    if (Array.isArray(parent.replace)){
-                        parent.replace.forEach((r) => {
-                            out.forEach((item, i) => { if (item.match(r.key) != null) out[i] = r.replacement; });
-                        });
-                    } else if (typeof (parent.replace) == 'object') {
-                        out.forEach((item, i) => { if (item.match(parent.replace.key) != null) out[i] = parent.replace.replacement; });
-                    }
-                    //generating linetype codes from line headers
-                    var capCount = 1;
-                    out.forEach((item, i) => {
-                        //splitting off code
-                        var code = item.split(' ')[0];
-                        if (code.match(":") != null) {
-                            newLine = {Code: code.replace(':', ''), Text: item.replace(code, '').trim()};
-                            //code case for images
-                            if (Array.isArray(parent.imageCode)){ //multiple image codes
-                                parent.imageCode.forEach((r) => {
-                                    if (newLine.Code == r) {
-                                        newLine.src = url.replace('.txt', '_Image' + capCount + '.jpg');
-                                        capCount++;
-                                    }
-                                });
-                            } else if (typeof (parent.imageCode) == 'string') { //single image code
-                                if (newLine.Code == parent.imageCode) {
-                                    newLine.src = url.replace('.txt', '_Image' + capCount + '.jpg');
-                                    capCount++;
-                                }
-                            }
-                            out[i] = newLine;
-                        } else { //defaults: strings vs. empty strings
-                            if (item.trim().length === 0) {
-                                newLine = {Code: '_space', Text: item.trim()};
-                            } else {
-                                newLine = {Code: '_default', Text: item.trim()};
-                            }
-                            out[i] = newLine;
-                        }
-                    });
-                    //removing white space at top and bottom of text
-                    while(out[0].Code == '_space' ) { //space at top
-                        out.shift();
-                    }
-                    //space at bottom
-                    while(out[(out.length - 1)].Code == '_space' && out[(out.length - 2)].Code == '_space') {
-                        out.pop();
-                    }
-                    //adding header to each text if provided
-                    if (parent.header != null && parent.header.length > 0){
-                        var header = [];
-                        if (Array.isArray(parent.header)){
-                            parent.header.forEach((h) => {
-                                header.push({Code: '_header', Text: h});
-                            });
-                        } else if (typeof (parent.header) == 'string') {
-                            header.push({Code: '_header', Text: parent.header});
-                        }
-                        out = [...header, ...out];
-                    }
-                    //adding footer to each text if provided
-                    if (parent.footer != null && parent.footer.length > 0){
-                        if (Array.isArray(parent.footer)){
-                            parent.footer.forEach((f) => {
-                                out.push({Code: '_footer', Text: f});
-                            });
-                        } else if (typeof (parent.footer) == 'string') {
-                            out.push({Code: '_footer', Text: parent.footer});
-                        }
-                    }
-                    //formatting text lines as html divs
-                    var outDiv = document.createElement('div');
-                    //formatting each text output based on text code
-                    out.slice().forEach((o) => {
-                        var newChild = txt.addDiv(o.Code, o.Text, o.src);
-                        if (JSON.stringify(o.Text.substring(0,1)) == JSON.stringify('\t')) {
-                            newChild.style.textIndent = '36px';
-                        }
-                        outDiv.appendChild(newChild);
-                    });
-                    
-                    //output
-                    parent.texts[desc] = {WebCode: desc, Text: out, Div: outDiv, Url: url};
-                }).always(function(){
-                    if (parent.count.counting) {
-                        parent.newText = parent.newText + 1;
-                    }
-                });
-            },
-            loadText(inputs) {
-                //reading text descriptions for each item in inputs
-                if (Array.isArray(inputs)){
-                    this.count.outOf = inputs.length;
-                    this.count.counting = true;
-                    inputs.forEach((f) => {
-                        this.pullTextAndFormat(f.Description, f.Url);
-                    });
-                } else if (typeof (inputs) == 'object') {
-                    this.count.outOf = Object.keys(inputs).length;
-                    this.count.counting = true;
-                    Object.values(inputs).forEach((f) => {
-                        this.pullTextAndFormat(f.Description, f.Url);
-                    });
-                }
-            },
-            _onLoad(){},
-            update(text){
-                if (this.count.total == this.count.outOf){
-                    this._onLoad();
-                    this.count.counting = false;
-                }
-            },
-            newFormat(){
-                var newObj = jQuery.extend(true, {}, this);
-                Object.defineProperty(newObj, 'newText', {
-                    get: function() {
-                        return this.count.total;
-                    },
-                    set: function(newProp) {
-                        this.count.total = newProp;
-                        this.update(newProp);
-                    },
-                    enumerable: true
-                });
-                newObj.addCategory('_default');
-                newObj.addCategory('_space');
-                newObj.addCategory('_header');
-                newObj.addCategory('_footer');
-                return newObj;
-            }
-        }
 
         //creating text reader/formatter
         const txt = formatText.newFormat();
@@ -1409,6 +1198,9 @@
             //updateOutput(sidebarText, defaultWebID);
             updateWidth(); //updating window width
         }   
+
+        //starting the map (temp location)
+        layerCounter.update();
 
         //reseting scroll position on layer click
         function resetScroll() {

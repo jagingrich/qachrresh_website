@@ -404,10 +404,15 @@
             },
             update() {
                 if (this.count == this.target) {
+                    updateProgress(1, 3);
+                    var tilegroups = [];
+                    tileLayers.forEach(t => {
+                        tilegroups.push(allTiles[t]);
+                    });
                     addLayerGroups(
                         mapInput = map,
                         layerControl = control,
-                        layers = tileLayers,
+                        layers = tilegroups,
                         groups = generateLayerGroups({ groups: groups }),
                         functionOnLoad = function () {
                             getAllFeatures(map, true).forEach((v) => {
@@ -461,14 +466,19 @@
                             });
                         }
                     });
-                    operationTiles.forEach((t) => {
-                        L.tileLayer(t, {
-                            maxZoom: 24,
-                            minZoom: 17,
-                            tms: true,
-                            attribution: attribution,
-                            pane: 'overdata-pane'
-                        }).addTo(map);
+                    var tileops = [];
+                    operationTiles.forEach(t => {
+                        tileops.push(allTiles[t]);
+                    });
+                    function opLayer(url) {
+                        url.options.maxZoom = 24;
+                        url.options.minZoom = 17;
+                        url.options.pane = 'overdata-pane'
+                        url.options.attribution = attribution;
+                        return url;
+                    }
+                    tileops.forEach(t => {
+                        opLayer(t).addTo(map);
                     })
                 }
             },
@@ -492,6 +502,7 @@
         var shpFiles = [];
         var groups = [];
         var tileLayers = [];
+        var tileCount = 0;
         var shpLayers = [];
         var attribution;
         var dropdownName;
@@ -572,8 +583,21 @@
         state.bounds = mapbounds;
 
         //reading in shapefiles
-        layerCounter.target = shpLayers.length * 2;
+        layerCounter.target = shpLayers.length * 2 + tileLayers.length + operationTiles.length;
         shpLayers.forEach(s => readSHPs(s));
+
+        //loading tile layers
+        allTiles = {};
+        function loadTiles(tiles) {
+            tiles.forEach(t => {
+                allTiles[t] = L.tileLayer(t, {
+                    tms: true
+                });
+                layerCounter.iteration++;
+                updateProgress(1 / tiles.length, 3);
+            });
+        }
+        loadTiles([...tileLayers, ...operationTiles]);
         
         //listening for width change
         ['resize', 'focus'].forEach(function (e) {
@@ -652,12 +676,14 @@
             'https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapTiles/MAG/{z}/{x}/{y}.png'];
             operationTiles = ['https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapTiles/OpA/{z}/{x}/{y}.png',
             'https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapTiles/OpB/{z}/{x}/{y}.png'];
+            tileCount = tileLayers.length + operationTiles.length;
             attribution = 'JAG2024 | <a href="https://scholarblogs.emory.edu/rliim/">Rural Landscapes of Iron Age Imperial Mesopotamia';
             shpLayers = ['https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/QachRresh_Operations.shp'];
             //dropdownName = 'dropdown-contents';
             //setting description creation vars
             url = 'https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapDescriptions/';
             defaultWebID = 'Introduction';
+            baseShapefile = 'QachRresh_Operations';
             //dropdownDefault = ['<option value="' + defaultWebID + '" disabled selected hidden>Select Monument</option>',
             //'<option value="' + defaultWebID + '">About: Interactive Plan</option>'];
             //remove = ['JAG_UNEDITED', 'Glennon'];
@@ -688,22 +714,13 @@
 
         //formatting for tile layers
         function tileLayer(url, setAttribution = false) {
+            url.options.maxZoom = 22;
+            url.options.minZoom = 17;
+            url.options.pane = 'basemap-pane'
             if (setAttribution) {
-                return L.tileLayer(url, {
-                    maxZoom: 22,
-                    minZoom: 17,
-                    tms: true,
-                    attribution: attribution,
-                    pane: 'basemap-pane'
-                });
-            } else {
-                return L.tileLayer(url, {
-                    maxZoom: 22,
-                    minZoom: 17,
-                    tms: true,
-                    pane: 'basemap-pane'
-                });
+                url.options.attribution = attribution;
             }
+            return url;
         }
 
         //formatting for json overlay layers
@@ -869,10 +886,10 @@
             var tiles = [];
             var shps = [];
             layers.forEach(function (l) {
-                if (typeof (l) == 'string' && l.match('{z}/{x}/{y}.png') != null) {
+                if (l._url.match('{z}/{x}/{y}.png') != null) {
                     tiles.push(l);
                 }
-                if (typeof (l) == 'object' && l.type == "FeatureCollection") {
+                if (l.type == "FeatureCollection") {
                     shps.push(l);
                 }
             });
@@ -907,7 +924,7 @@
                 var match = false;
                 groups.forEach(function (g) {
                     if (g.name != 'Other') {
-                        if (t.match(g.keyword) != null) {
+                        if (t._url.match(g.keyword) != null) {
                             tileLayer(t, true).addTo(g.layers);
                             match = true;
                         }
@@ -916,7 +933,7 @@
                         out = t;
                         groups.forEach((gs) => {
                             if (gs.keyword != 'Missing') {
-                                if (t.match(gs.keyword) != null) {
+                                if (t._url.match(gs.keyword) != null) {
                                     out = null;
                                 }
                             }
@@ -930,7 +947,8 @@
                     tileLayer(t, true).addTo(groups[groups.findIndex((element) => element.name == "Other")].layers)
                 }
                 layersCount++;
-                updateProgress(tileLayers.length + shpFiles.length + 1);
+
+                //updateProgress(1 / tileLayers.length, 3);
             });
 
             //shp layers to groups
@@ -948,7 +966,7 @@
                     //jsonLayer(s).addTo(groups[groups.findIndex((element) => element.name == "Other")].layers)
                 }
                 layersCount++;
-                updateProgress(tileLayers.length + shpFiles.length + 1);
+                //updateProgress(1 / shpFiles.length, 3);
             });
             addLayers(mapInput, groups, layerControl);
 
@@ -1203,14 +1221,14 @@
         txt.addCategory('_default', {}, {}, false);
         txt.addCategory('_space', {height: '20px'}, {}, false);
         txt._onLoad = function () {
-            updateProgress(tileLayers.length + shpFiles.length + 1);
+            updateProgress(1, 3);
             state.select = 'Introduction';
             //updateOutput(sidebarText, defaultWebID);
             updateWidth(); //updating window width
         }   
 
         //starting the map (temp location)
-        layerCounter.update();
+        //layerCounter.update();
 
         //reseting scroll position on layer click
         function resetScroll() {
@@ -1233,12 +1251,12 @@
         }
 
         //updating progress bar as layers/descriptions load
-        function updateProgress(segments) {
+        function updateProgress(increase, parts) {
             var id = setInterval(frame, 10);
             var iter = 0;
             function frame() {
                 if (iter < 100) {
-                    counter.progress += 1 / segments;
+                    counter.progress += increase / parts;
                     iter++;
                 } else {
                     clearInterval(id);

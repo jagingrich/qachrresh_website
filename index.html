@@ -305,8 +305,9 @@
 
         //state counter for which aspect of the map is being displayed
         const state = {
-            state: 'QR',
+            state: 'Introduction',
             bounds: mapbounds,
+            center: 0,
             padding: 0,
             visiblePane(show, hide, delay = null) {
                 if (delay == null) {
@@ -322,49 +323,36 @@
                 }, delay);
             },
             update(select) {
-                switch(select) {
-                    case 'QR':
-                        if (txt.texts != null) {
-                            updateText("Introduction");
-                        }
-                        map.setMaxZoom(21);
-                        map.setMinZoom(17);
-                        this.visiblePane('basemap-pane', 'overdata-pane');
-                        document.getElementById('leaflet-refresh-container').style.display = 'none';
-                        document.getElementById('leaflet-basemap-toggle-container').style.display = 'block';
-                        _sidebar.setSidebar('right');
-                        updateWidth();
-                        break;
-                    case 'OPA':
-                        if (txt.texts != null) {
-                            updateText("OperationA");
-                        }
-                        map.setMaxZoom(23);
-                        map.setMinZoom(21);
-                        this.visiblePane('overdata-pane', 'basemap-pane', 1000);
-                        setTimeout(function() {
-                            document.getElementById('leaflet-refresh-container').style.display = 'block';
-                            document.getElementById('leaflet-basemap-toggle-container').style.display = 'none';
-                        }, 1500)
+                if (select == 'Introduction') {
+                    if (txt.texts != null) {
+                        updateText(select);
+                    }
+                    map.setMaxZoom(21);
+                    map.setMinZoom(17);
+                    this.visiblePane('basemap-pane', 'overdata-pane');
+                    document.getElementById('leaflet-refresh-container').style.display = 'none';
+                    document.getElementById('leaflet-basemap-toggle-container').style.display = 'block';
+                    _sidebar.setSidebar('right');
+                    updateWidth();
+                    this.center = this.bounds.getCenter().lng;
+                }
+                else if (Object.keys(txt.texts).includes(select)) {
+                    if (txt.texts != null) {
+                        updateText(select);
+                    }
+                    map.setMaxZoom(23);
+                    map.setMinZoom(21);
+                    this.visiblePane('overdata-pane', 'basemap-pane', 1000);
+                    setTimeout(function() {
+                        document.getElementById('leaflet-refresh-container').style.display = 'block';
+                        document.getElementById('leaflet-basemap-toggle-container').style.display = 'none';
+                    }, 1500)
+                    if (this.bounds.getCenter().lng > this.center) {
                         _sidebar.setSidebar('left');
-                        updateWidth();
-                        break;
-                    case 'OPB':
-                        if (txt.texts != null) {
-                            updateText("OperationB");
-                        }
-                        map.setMaxZoom(23);
-                        map.setMinZoom(21);
-                        this.visiblePane('overdata-pane', 'basemap-pane', 1000);
-                        setTimeout(function() {
-                            document.getElementById('leaflet-refresh-container').style.display = 'block';
-                            document.getElementById('leaflet-basemap-toggle-container').style.display = 'none';
-                        }, 1500)
+                    } else {
                         _sidebar.setSidebar('right');
-                        updateWidth();
-                        break;
-                    default:
-                        break;
+                    }
+                    updateWidth();
                 }
                 map.flyToBounds(this.bounds);
             },
@@ -402,13 +390,30 @@
         //shapfile loading counter, starting map on all shapefiles loaded
         const layerCounter = {
             shapes: {},
+            tiles: {},
+            layers: [],
             count: 0,
+            target: 0,
+            baseCheck(shape) {
+                this.layers.push({Description: 'Introduction', Url: url + 'Introduction/QachRresh_Introduction.txt'});
+                shape.features.forEach(f => {
+                    shpLayers.push('https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/' + f.properties.WebCode + '_Contexts.shp');
+                    this.layers.push({Description: f.properties.WebCode, Url: url + f.properties.WebCode + "/QachRresh_" + f.properties.WebCode + '.txt'});
+                    this.target++;
+                });
+                shpLayers.forEach(s => readSHPs(s));
+            },
             update() {
-                if (this.count == shpLayers.length) {
+                if (this.count == this.target) {
+                    updateProgress(1, 3);
+                    var tilegroups = [];
+                    tileLayers.forEach(t => {
+                        tilegroups.push(this.tiles[t]);
+                    });
                     addLayerGroups(
                         mapInput = map,
                         layerControl = control,
-                        layers = tileLayers,
+                        layers = tilegroups,
                         groups = generateLayerGroups({ groups: groups }),
                         functionOnLoad = function () {
                             getAllFeatures(map, true).forEach((v) => {
@@ -426,9 +431,7 @@
                             //        newDiv.addEventListener('change', onSelect);
                             //        newDiv.title = "Select Monument Name to Zoom In";
                             //    });
-                            var feats = [];
-                            ['Introduction', 'OperationA', 'OperationB'].forEach((f) => feats.push({Description: f, Url: url + f + "/QachRresh_" + f + '.txt'}));
-                            txt.loadText(feats); //loading and formatting text descriptions for monuments
+                            txt.loadText(layerCounter.layers); //loading and formatting text descriptions for monuments
                             addRefresh(); //adding refresh button
                             addRecenterControl(); //adding recentering control to map
                             updateWidth(); //updating window width
@@ -438,7 +441,7 @@
                         }
                     );
                     Object.values(layerCounter.shapes).forEach((s) => {
-                        if(s.name == 'QR_Operations') {
+                        if(s.name == 'QachRresh_Operations') {
                             var over = L.geoJSON(s, {
                                 style: styleTransparent,
                                 onEachFeature: (feature, layer) => onEachFeature(feature, layer, true, 0.1),
@@ -464,14 +467,19 @@
                             });
                         }
                     });
-                    operationTiles.forEach((t) => {
-                        L.tileLayer(t, {
-                            maxZoom: 24,
-                            minZoom: 17,
-                            tms: true,
-                            attribution: attribution,
-                            pane: 'overdata-pane'
-                        }).addTo(map);
+                    var tileops = [];
+                    operationTiles.forEach(t => {
+                        tileops.push(this.tiles[t]);
+                    });
+                    function opLayer(url) {
+                        url.options.maxZoom = 24;
+                        url.options.minZoom = 17;
+                        url.options.pane = 'overdata-pane'
+                        url.options.attribution = attribution;
+                        return url;
+                    }
+                    tileops.forEach(t => {
+                        opLayer(t).addTo(map);
                     })
                 }
             },
@@ -481,6 +489,13 @@
             set iteration(iteration) {
                 this.count = iteration;
                 this.update(this.count);
+            },
+            get baseSet() {
+                return this.baseShapefile;
+            },
+            set baseSet(baseSet) {
+                this.baseShapefile = baseSet;
+                this.baseCheck(this.baseShapefile);
             }
         }
 
@@ -488,6 +503,7 @@
         var shpFiles = [];
         var groups = [];
         var tileLayers = [];
+        var tileCount = 0;
         var shpLayers = [];
         var attribution;
         var dropdownName;
@@ -496,6 +512,7 @@
         var sidebarText = 'sidebar-content';
         var url;
         var defaultWebID = 'Introduction';
+        var baseShapefile = 'QachRresh_Operations';
         var webID = defaultWebID;
         var descriptions;
         var dropdownDefault = [];
@@ -567,7 +584,20 @@
         state.bounds = mapbounds;
 
         //reading in shapefiles
-        shpLayers.forEach((s) => readSHPs(s));
+        layerCounter.target = shpLayers.length * 2 + tileLayers.length + operationTiles.length;
+        shpLayers.forEach(s => readSHPs(s));
+
+        //loading tile layers
+        function loadTiles(tiles) {
+            tiles.forEach(t => {
+                layerCounter.tiles[t] = L.tileLayer(t, {
+                    tms: true
+                });
+                layerCounter.iteration++;
+                updateProgress(1 / tiles.length, 3);
+            });
+        }
+        loadTiles([...tileLayers, ...operationTiles]);
         
         //listening for width change
         ['resize', 'focus'].forEach(function (e) {
@@ -646,15 +676,14 @@
             './Data/mapTiles/MAG/{z}/{x}/{y}.png'];
             operationTiles = ['./Data/mapTiles/OpA/{z}/{x}/{y}.png',
             './Data/mapTiles/OpB/{z}/{x}/{y}.png'];
+            tileCount = tileLayers.length + operationTiles.length;
             attribution = 'JAG2024 | <a href="https://scholarblogs.emory.edu/rliim/">Rural Landscapes of Iron Age Imperial Mesopotamia';
-            shpLayers = ['https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/QR_Operations.shp',
-            'https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/OpA_Contexts.shp',
-            'https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/OpB_Contexts.shp'];
-
+            shpLayers = ['https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/QachRresh_Operations.shp'];
             //dropdownName = 'dropdown-contents';
             //setting description creation vars
             url = 'https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapDescriptions/';
             defaultWebID = 'Introduction';
+            baseShapefile = 'QachRresh_Operations';
             //dropdownDefault = ['<option value="' + defaultWebID + '" disabled selected hidden>Select Monument</option>',
             //'<option value="' + defaultWebID + '">About: Interactive Plan</option>'];
             //remove = ['JAG_UNEDITED', 'Glennon'];
@@ -685,22 +714,13 @@
 
         //formatting for tile layers
         function tileLayer(url, setAttribution = false) {
+            url.options.maxZoom = 22;
+            url.options.minZoom = 17;
+            url.options.pane = 'basemap-pane'
             if (setAttribution) {
-                return L.tileLayer(url, {
-                    maxZoom: 22,
-                    minZoom: 17,
-                    tms: true,
-                    attribution: attribution,
-                    pane: 'basemap-pane'
-                });
-            } else {
-                return L.tileLayer(url, {
-                    maxZoom: 22,
-                    minZoom: 17,
-                    tms: true,
-                    pane: 'basemap-pane'
-                });
+                url.options.attribution = attribution;
             }
+            return url;
         }
 
         //formatting for json overlay layers
@@ -766,8 +786,7 @@
         //selecting feature: click or dropdown
         function selectFeature(webCode, fitZoom = false, padding = 0) {
             //update text and dropdown
-            //updateText(webCode);
-            console.log(webCode.target.feature.properties.WebCode);
+            //console.log(webCode.target.feature.properties.WebCode);
 
             //zoom to selection
             if (padding != 0) {
@@ -867,10 +886,10 @@
             var tiles = [];
             var shps = [];
             layers.forEach(function (l) {
-                if (typeof (l) == 'string' && l.match('{z}/{x}/{y}.png') != null) {
+                if (l._url.match('{z}/{x}/{y}.png') != null) {
                     tiles.push(l);
                 }
-                if (typeof (l) == 'object' && l.type == "FeatureCollection") {
+                if (l.type == "FeatureCollection") {
                     shps.push(l);
                 }
             });
@@ -905,7 +924,7 @@
                 var match = false;
                 groups.forEach(function (g) {
                     if (g.name != 'Other') {
-                        if (t.match(g.keyword) != null) {
+                        if (t._url.match(g.keyword) != null) {
                             tileLayer(t, true).addTo(g.layers);
                             match = true;
                         }
@@ -914,7 +933,7 @@
                         out = t;
                         groups.forEach((gs) => {
                             if (gs.keyword != 'Missing') {
-                                if (t.match(gs.keyword) != null) {
+                                if (t._url.match(gs.keyword) != null) {
                                     out = null;
                                 }
                             }
@@ -928,7 +947,8 @@
                     tileLayer(t, true).addTo(groups[groups.findIndex((element) => element.name == "Other")].layers)
                 }
                 layersCount++;
-                updateProgress(tileLayers.length + shpFiles.length + 1);
+
+                //updateProgress(1 / tileLayers.length, 3);
             });
 
             //shp layers to groups
@@ -946,7 +966,7 @@
                     //jsonLayer(s).addTo(groups[groups.findIndex((element) => element.name == "Other")].layers)
                 }
                 layersCount++;
-                updateProgress(tileLayers.length + shpFiles.length + 1);
+                //updateProgress(1 / shpFiles.length, 3);
             });
             addLayers(mapInput, groups, layerControl);
 
@@ -958,21 +978,29 @@
         //ajax request for SHPfile data
         function readSHPs(url) {
             url = url.replaceAll('.shp', '');
-            $.ajax({
-                url: url + '.shp',
-                type: "head",
-                success: function () {
-                    shp(url).then(function (out) {
-                        out.name = url.split('/')[url.split('/').length - 1];
-                        out.features.forEach((f) => f.properties.fullName = '(' + f.properties.Label + ') ' + f.properties.Name);
-                        layerCounter.shapes[out.name] = out;
+            var name = url.split('/')[url.split('/').length - 1];
+            if (Object.keys(layerCounter.shapes).includes(name)) {
+                layerCounter.iteration++;
+            } else {
+                $.ajax({
+                    url: url + '.shp',
+                    type: "head",
+                    success: function () {
+                        shp(url).then(function (out) {
+                            out.name = name;
+                            out.features.forEach((f) => f.properties.fullName = '(' + f.properties.Label + ') ' + f.properties.Name);
+                            layerCounter.shapes[out.name] = out;
+                            layerCounter.iteration++;
+                            if (out.name == baseShapefile) {
+                                layerCounter.baseSet = out;
+                            }
+                        });
+                    },
+                    error: function () {
                         layerCounter.iteration++;
-                    });
-                },
-                error: function () {
-                    layerCounter.iteration++;
-                }
-            });
+                    }
+                });
+            }
         }
 
         //creating legend
@@ -1025,7 +1053,7 @@
                         state.bounds = mapbounds;
                         state.padding = 0.1;
                         map.setMaxBounds(mapbounds.pad(1));
-                        state.select = "QR";
+                        state.select = "Introduction";
                     });
 
                     container.id = "leaflet-refresh-container";
@@ -1193,14 +1221,14 @@
         txt.addCategory('_default', {}, {}, false);
         txt.addCategory('_space', {height: '20px'}, {}, false);
         txt._onLoad = function () {
-            updateProgress(tileLayers.length + shpFiles.length + 1);
-            state.select = "QR";
+            updateProgress(1, 3);
+            state.select = 'Introduction';
             //updateOutput(sidebarText, defaultWebID);
             updateWidth(); //updating window width
         }   
 
         //starting the map (temp location)
-        layerCounter.update();
+        //layerCounter.update();
 
         //reseting scroll position on layer click
         function resetScroll() {
@@ -1223,12 +1251,12 @@
         }
 
         //updating progress bar as layers/descriptions load
-        function updateProgress(segments) {
+        function updateProgress(increase, parts) {
             var id = setInterval(frame, 10);
             var iter = 0;
             function frame() {
                 if (iter < 100) {
-                    counter.progress += 1 / segments;
+                    counter.progress += increase / parts;
                     iter++;
                 } else {
                     clearInterval(id);

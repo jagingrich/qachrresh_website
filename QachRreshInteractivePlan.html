@@ -390,9 +390,20 @@
         //shapfile loading counter, starting map on all shapefiles loaded
         const layerCounter = {
             shapes: {},
+            layers: [],
             count: 0,
+            target: 0,
+            baseCheck(shape) {
+                this.layers.push({Description: 'Introduction', Url: url + 'Introduction/QachRresh_Introduction.txt'});
+                shape.features.forEach(f => {
+                    shpLayers.push('https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/' + f.properties.WebCode + '_Contexts.shp');
+                    this.layers.push({Description: f.properties.WebCode, Url: url + f.properties.WebCode + "/QachRresh_" + f.properties.WebCode + '.txt'});
+                    this.target++;
+                });
+                shpLayers.forEach(s => readSHPs(s));
+            },
             update() {
-                if (this.count == shpLayers.length) {
+                if (this.count == this.target) {
                     addLayerGroups(
                         mapInput = map,
                         layerControl = control,
@@ -414,9 +425,7 @@
                             //        newDiv.addEventListener('change', onSelect);
                             //        newDiv.title = "Select Monument Name to Zoom In";
                             //    });
-                            var feats = [];
-                            ['Introduction', 'OperationA', 'OperationB'].forEach((f) => feats.push({Description: f, Url: url + f + "/QachRresh_" + f + '.txt'}));
-                            txt.loadText(feats); //loading and formatting text descriptions for monuments
+                            txt.loadText(layerCounter.layers); //loading and formatting text descriptions for monuments
                             addRefresh(); //adding refresh button
                             addRecenterControl(); //adding recentering control to map
                             updateWidth(); //updating window width
@@ -469,6 +478,13 @@
             set iteration(iteration) {
                 this.count = iteration;
                 this.update(this.count);
+            },
+            get baseSet() {
+                return this.baseShapefile;
+            },
+            set baseSet(baseSet) {
+                this.baseShapefile = baseSet;
+                this.baseCheck(this.baseShapefile);
             }
         }
 
@@ -484,6 +500,7 @@
         var sidebarText = 'sidebar-content';
         var url;
         var defaultWebID = 'Introduction';
+        var baseShapefile = 'QachRresh_Operations';
         var webID = defaultWebID;
         var descriptions;
         var dropdownDefault = [];
@@ -555,7 +572,8 @@
         state.bounds = mapbounds;
 
         //reading in shapefiles
-        shpLayers.forEach((s) => readSHPs(s));
+        layerCounter.target = shpLayers.length * 2;
+        shpLayers.forEach(s => readSHPs(s));
         
         //listening for width change
         ['resize', 'focus'].forEach(function (e) {
@@ -635,10 +653,7 @@
             operationTiles = ['https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapTiles/OpA/{z}/{x}/{y}.png',
             'https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapTiles/OpB/{z}/{x}/{y}.png'];
             attribution = 'JAG2024 | <a href="https://scholarblogs.emory.edu/rliim/">Rural Landscapes of Iron Age Imperial Mesopotamia';
-            shpLayers = ['https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/QachRresh_Operations.shp',
-            'https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/OperationA_Contexts.shp',
-            'https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/OperationB_Contexts.shp'];
-
+            shpLayers = ['https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/QachRresh_Operations.shp'];
             //dropdownName = 'dropdown-contents';
             //setting description creation vars
             url = 'https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapDescriptions/';
@@ -945,21 +960,29 @@
         //ajax request for SHPfile data
         function readSHPs(url) {
             url = url.replaceAll('.shp', '');
-            $.ajax({
-                url: url + '.shp',
-                type: "head",
-                success: function () {
-                    shp(url).then(function (out) {
-                        out.name = url.split('/')[url.split('/').length - 1];
-                        out.features.forEach((f) => f.properties.fullName = '(' + f.properties.Label + ') ' + f.properties.Name);
-                        layerCounter.shapes[out.name] = out;
+            var name = url.split('/')[url.split('/').length - 1];
+            if (Object.keys(layerCounter.shapes).includes(name)) {
+                layerCounter.iteration++;
+            } else {
+                $.ajax({
+                    url: url + '.shp',
+                    type: "head",
+                    success: function () {
+                        shp(url).then(function (out) {
+                            out.name = name;
+                            out.features.forEach((f) => f.properties.fullName = '(' + f.properties.Label + ') ' + f.properties.Name);
+                            layerCounter.shapes[out.name] = out;
+                            layerCounter.iteration++;
+                            if (out.name == baseShapefile) {
+                                layerCounter.baseSet = out;
+                            }
+                        });
+                    },
+                    error: function () {
                         layerCounter.iteration++;
-                    });
-                },
-                error: function () {
-                    layerCounter.iteration++;
-                }
-            });
+                    }
+                });
+            }
         }
 
         //creating legend

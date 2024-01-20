@@ -305,8 +305,9 @@
 
         //state counter for which aspect of the map is being displayed
         const state = {
-            state: 'QR',
+            state: 'Introduction',
             bounds: mapbounds,
+            center: 0,
             padding: 0,
             visiblePane(show, hide, delay = null) {
                 if (delay == null) {
@@ -322,49 +323,36 @@
                 }, delay);
             },
             update(select) {
-                switch(select) {
-                    case 'QR':
-                        if (txt.texts != null) {
-                            updateText("Introduction");
-                        }
-                        map.setMaxZoom(21);
-                        map.setMinZoom(17);
-                        this.visiblePane('basemap-pane', 'overdata-pane');
-                        document.getElementById('leaflet-refresh-container').style.display = 'none';
-                        document.getElementById('leaflet-basemap-toggle-container').style.display = 'block';
-                        _sidebar.setSidebar('right');
-                        updateWidth();
-                        break;
-                    case 'OPA':
-                        if (txt.texts != null) {
-                            updateText("OperationA");
-                        }
-                        map.setMaxZoom(23);
-                        map.setMinZoom(21);
-                        this.visiblePane('overdata-pane', 'basemap-pane', 1000);
-                        setTimeout(function() {
-                            document.getElementById('leaflet-refresh-container').style.display = 'block';
-                            document.getElementById('leaflet-basemap-toggle-container').style.display = 'none';
-                        }, 1500)
+                if (select == 'Introduction') {
+                    if (txt.texts != null) {
+                        updateText(select);
+                    }
+                    map.setMaxZoom(21);
+                    map.setMinZoom(17);
+                    this.visiblePane('basemap-pane', 'overdata-pane');
+                    document.getElementById('leaflet-refresh-container').style.display = 'none';
+                    document.getElementById('leaflet-basemap-toggle-container').style.display = 'block';
+                    _sidebar.setSidebar('right');
+                    updateWidth();
+                    this.center = this.bounds.getCenter().lng;
+                }
+                else if (Object.keys(txt.texts).includes(select)) {
+                    if (txt.texts != null) {
+                        updateText(select);
+                    }
+                    map.setMaxZoom(23);
+                    map.setMinZoom(21);
+                    this.visiblePane('overdata-pane', 'basemap-pane', 1000);
+                    setTimeout(function() {
+                        document.getElementById('leaflet-refresh-container').style.display = 'block';
+                        document.getElementById('leaflet-basemap-toggle-container').style.display = 'none';
+                    }, 1500)
+                    if (this.bounds.getCenter().lng > this.center) {
                         _sidebar.setSidebar('left');
-                        updateWidth();
-                        break;
-                    case 'OPB':
-                        if (txt.texts != null) {
-                            updateText("OperationB");
-                        }
-                        map.setMaxZoom(23);
-                        map.setMinZoom(21);
-                        this.visiblePane('overdata-pane', 'basemap-pane', 1000);
-                        setTimeout(function() {
-                            document.getElementById('leaflet-refresh-container').style.display = 'block';
-                            document.getElementById('leaflet-basemap-toggle-container').style.display = 'none';
-                        }, 1500)
+                    } else {
                         _sidebar.setSidebar('right');
-                        updateWidth();
-                        break;
-                    default:
-                        break;
+                    }
+                    updateWidth();
                 }
                 map.flyToBounds(this.bounds);
             },
@@ -438,7 +426,7 @@
                         }
                     );
                     Object.values(layerCounter.shapes).forEach((s) => {
-                        if(s.name == 'QR_Operations') {
+                        if(s.name == 'QachRresh_Operations') {
                             var over = L.geoJSON(s, {
                                 style: styleTransparent,
                                 onEachFeature: (feature, layer) => onEachFeature(feature, layer, true, 0.1),
@@ -647,9 +635,9 @@
             operationTiles = ['https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapTiles/OpA/{z}/{x}/{y}.png',
             'https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapTiles/OpB/{z}/{x}/{y}.png'];
             attribution = 'JAG2024 | <a href="https://scholarblogs.emory.edu/rliim/">Rural Landscapes of Iron Age Imperial Mesopotamia';
-            shpLayers = ['https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/QR_Operations.shp',
-            'https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/OpA_Contexts.shp',
-            'https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/OpB_Contexts.shp'];
+            shpLayers = ['https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/QachRresh_Operations.shp',
+            'https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/OperationA_Contexts.shp',
+            'https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/OperationB_Contexts.shp'];
 
             //dropdownName = 'dropdown-contents';
             //setting description creation vars
@@ -766,8 +754,7 @@
         //selecting feature: click or dropdown
         function selectFeature(webCode, fitZoom = false, padding = 0) {
             //update text and dropdown
-            //updateText(webCode);
-            console.log(webCode.target.feature.properties.WebCode);
+            //console.log(webCode.target.feature.properties.WebCode);
 
             //zoom to selection
             if (padding != 0) {
@@ -1025,7 +1012,7 @@
                         state.bounds = mapbounds;
                         state.padding = 0.1;
                         map.setMaxBounds(mapbounds.pad(1));
-                        state.select = "QR";
+                        state.select = "Introduction";
                     });
 
                     container.id = "leaflet-refresh-container";
@@ -1194,7 +1181,7 @@
         txt.addCategory('_space', {height: '20px'}, {}, false);
         txt._onLoad = function () {
             updateProgress(tileLayers.length + shpFiles.length + 1);
-            state.select = "QR";
+            state.select = 'Introduction';
             //updateOutput(sidebarText, defaultWebID);
             updateWidth(); //updating window width
         }   

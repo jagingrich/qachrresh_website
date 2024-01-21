@@ -396,16 +396,19 @@
             target: 0,
             baseCheck(shape) {
                 this.layers.push({Description: 'Introduction', Url: url + 'Introduction/QachRresh_Introduction.txt'});
+                var newTiles = [];
                 shape.features.forEach(f => {
                     shpLayers.push('https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/' + f.properties.WebCode + '_Contexts.shp');
                     this.layers.push({Description: f.properties.WebCode, Url: url + f.properties.WebCode + "/QachRresh_" + f.properties.WebCode + '.txt'});
-                    this.target++;
+                    newTiles.push('https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapTiles/' + f.properties.WebCode + '/{z}/{x}/{y}.png');
+                    this.target += 2;
                 });
                 shpLayers.forEach(s => readSHPs(s));
+                loadTiles(newTiles);
             },
             update() {
                 if (this.count == this.target) {
-                    updateProgress(1, 3);
+                    updateProgress(1, 4);
                     var tilegroups = [];
                     tileLayers.forEach(t => {
                         tilegroups.push(this.tiles[t]);
@@ -468,8 +471,10 @@
                         }
                     });
                     var tileops = [];
-                    operationTiles.forEach(t => {
-                        tileops.push(this.tiles[t]);
+                    Object.values(this.tiles).forEach(t => {
+                        if (!tileLayers.includes(t._url)) {
+                            tileops.push(t);
+                        }
                     });
                     function opLayer(url) {
                         url.options.maxZoom = 24;
@@ -503,7 +508,7 @@
         var shpFiles = [];
         var groups = [];
         var tileLayers = [];
-        var tileCount = 0;
+        //var tileCount = 0;
         var shpLayers = [];
         var attribution;
         var dropdownName;
@@ -584,7 +589,7 @@
         state.bounds = mapbounds;
 
         //reading in shapefiles
-        layerCounter.target = shpLayers.length * 2 + tileLayers.length + operationTiles.length;
+        layerCounter.target = shpLayers.length * 2 + tileLayers.length;
         shpLayers.forEach(s => readSHPs(s));
 
         //loading tile layers
@@ -594,10 +599,10 @@
                     tms: true
                 });
                 layerCounter.iteration++;
-                updateProgress(1 / tiles.length, 3);
+                updateProgress(1 / tiles.length, 4);
             });
         }
-        loadTiles([...tileLayers, ...operationTiles]);
+        loadTiles(tileLayers);
         
         //listening for width change
         ['resize', 'focus'].forEach(function (e) {
@@ -674,9 +679,6 @@
             groups = [["Elevation Model", "DEM"], ["Magnetometry", "MAG"]];
             tileLayers = ['https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapTiles/DEM/{z}/{x}/{y}.png',
             'https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapTiles/MAG/{z}/{x}/{y}.png'];
-            operationTiles = ['https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapTiles/OpA/{z}/{x}/{y}.png',
-            'https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapTiles/OpB/{z}/{x}/{y}.png'];
-            tileCount = tileLayers.length + operationTiles.length;
             attribution = 'JAG2024 | <a href="https://scholarblogs.emory.edu/rliim/">Rural Landscapes of Iron Age Imperial Mesopotamia';
             shpLayers = ['https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/QachRresh_Operations.shp'];
             //dropdownName = 'dropdown-contents';
@@ -1221,7 +1223,7 @@
         txt.addCategory('_default', {}, {}, false);
         txt.addCategory('_space', {height: '20px'}, {}, false);
         txt._onLoad = function () {
-            updateProgress(1, 3);
+            updateProgress(1, 4);
             state.select = 'Introduction';
             //updateOutput(sidebarText, defaultWebID);
             updateWidth(); //updating window width
@@ -1262,7 +1264,6 @@
                     clearInterval(id);
                 }
             }
-            
         }
     </script>
 </body>

@@ -305,7 +305,8 @@
 
         //state counter for which aspect of the map is being displayed
         const state = {
-            state: 'Introduction',
+            state: 'QachRresh',
+            activeLayer: 'QachRresh_QachRresh',
             bounds: mapbounds,
             center: 0,
             padding: 0,
@@ -323,7 +324,10 @@
                 }, delay);
             },
             update(select) {
-                if (select == 'Introduction') {
+                if (Object.keys(layerCounter.shapes).includes('QachRresh_' + select)) {
+                    this.activeLayer = 'QachRresh_' + select;
+                } 
+                if (select == 'QachRresh') {
                     if (txt.texts != null) {
                         updateText(select);
                     }
@@ -395,10 +399,10 @@
             count: 0,
             target: 0,
             baseCheck(shape) {
-                this.layers.push({Description: 'Introduction', Url: url + 'Introduction/QachRresh_Introduction.txt'});
+                this.layers.push({Description: 'QachRresh', Url: url + 'QachRresh/QachRresh_QachRresh.txt'});
                 var newTiles = [];
                 shape.features.forEach(f => {
-                    shpLayers.push('https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/' + f.properties.WebCode + '_Contexts.shp');
+                    shpLayers.push('https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/QachRresh_' + f.properties.WebCode + '.shp');
                     this.layers.push({Description: f.properties.WebCode, Url: url + f.properties.WebCode + "/QachRresh_" + f.properties.WebCode + '.txt'});
                     newTiles.push('https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapTiles/' + f.properties.WebCode + '/{z}/{x}/{y}.png');
                     this.target += 2;
@@ -444,7 +448,7 @@
                         }
                     );
                     Object.values(layerCounter.shapes).forEach((s) => {
-                        if(s.name == 'QachRresh_Operations') {
+                        if(s.name == 'QachRresh_QachRresh') {
                             var over = L.geoJSON(s, {
                                 style: styleTransparent,
                                 onEachFeature: (feature, layer) => onEachFeature(feature, layer, true, 0.1),
@@ -453,6 +457,7 @@
                             getAllFeatures(over, true).forEach((v) => {
                                 v.bindTooltipDelayed(v.feature.properties.Name, 
                                 { sticky: true, className: 'leaflet-textTitle' });
+                                v.layerName = s.name;
                             });
                         }
                         else {
@@ -463,10 +468,8 @@
                             }).addTo(map);
                             Object.values(over._layers).forEach((v) => {
                                 v.bindTooltipDelayed(v.feature.properties.Name, 
-                                {
-                                    sticky: true,
-                                    className: 'leaflet-textTitle' 
-                                });
+                                { sticky: true, className: 'leaflet-textTitle' });
+                                v.layerName = s.name;
                             });
                         }
                     });
@@ -516,8 +519,8 @@
         //setting description creation vars
         var sidebarText = 'sidebar-content';
         var url;
-        var defaultWebID = 'Introduction';
-        var baseShapefile = 'QachRresh_Operations';
+        var defaultWebID = 'QachRresh';
+        var baseShapefile = 'QachRresh_QachRresh';
         var webID = defaultWebID;
         var descriptions;
         var dropdownDefault = [];
@@ -680,12 +683,12 @@
             tileLayers = ['./Data/mapTiles/DEM/{z}/{x}/{y}.png',
             './Data/mapTiles/MAG/{z}/{x}/{y}.png'];
             attribution = 'JAG2024 | <a href="https://scholarblogs.emory.edu/rliim/">Rural Landscapes of Iron Age Imperial Mesopotamia';
-            shpLayers = ['https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/QachRresh_Operations.shp'];
+            shpLayers = ['https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/QachRresh_QachRresh.shp'];
             //dropdownName = 'dropdown-contents';
             //setting description creation vars
             url = 'https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapDescriptions/';
-            defaultWebID = 'Introduction';
-            baseShapefile = 'QachRresh_Operations';
+            defaultWebID = 'QachRresh';
+            baseShapefile = 'QachRresh_QachRresh';
             //dropdownDefault = ['<option value="' + defaultWebID + '" disabled selected hidden>Select Monument</option>',
             //'<option value="' + defaultWebID + '">About: Interactive Plan</option>'];
             //remove = ['JAG_UNEDITED', 'Glennon'];
@@ -787,19 +790,19 @@
 
         //selecting feature: click or dropdown
         function selectFeature(webCode, fitZoom = false, padding = 0) {
-            //update text and dropdown
-            //console.log(webCode.target.feature.properties.WebCode);
-
-            //zoom to selection
-            if (padding != 0) {
-                state.padding = padding;
+            //check if clicked on active layer
+            if(webCode.target.layerName == state.activeLayer) {
+                //zoom to selection
+                if (padding != 0) {
+                    state.padding = padding;
+                }
+                if (fitZoom) {
+                    state.bounds = webCode.target.getBounds();
+                    map.setMaxBounds(webCode.target.getBounds().pad(1));
+                }
+                state.select = webCode.target.feature.properties.WebCode;
+                map.flyToBounds(webCode.target.getBounds().pad(padding));
             }
-            if (fitZoom) {
-                state.bounds = webCode.target.getBounds();
-                map.setMaxBounds(webCode.target.getBounds().pad(1));
-            }
-            state.select = webCode.target.feature.properties.WebCode;
-            map.flyToBounds(webCode.target.getBounds().pad(padding));
         }
 
         //layer responsiveness
@@ -1055,7 +1058,7 @@
                         state.bounds = mapbounds;
                         state.padding = 0.1;
                         map.setMaxBounds(mapbounds.pad(1));
-                        state.select = "Introduction";
+                        state.select = "QachRresh";
                     });
 
                     container.id = "leaflet-refresh-container";
@@ -1224,7 +1227,7 @@
         txt.addCategory('_space', {height: '20px'}, {}, false);
         txt._onLoad = function () {
             updateProgress(1, 4);
-            state.select = 'Introduction';
+            state.select = 'QachRresh';
             //updateOutput(sidebarText, defaultWebID);
             updateWidth(); //updating window width
         }   

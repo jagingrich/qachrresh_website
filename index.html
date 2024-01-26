@@ -483,7 +483,7 @@
                         url.options.maxZoom = 24;
                         url.options.minZoom = 17;
                         url.options.pane = 'overdata-pane'
-                        url.options.attribution = attribution;
+                        //url.options.attribution = attribution;
                         return url;
                     }
                     tileops.forEach(t => {
@@ -576,6 +576,26 @@
         });
         var control = L.control.layers({}, null, { collapsed: false }).addTo(map);
         control._container.id = 'leaflet-basemap-toggle-container';
+
+        //function to add elements to map attribution
+        function addAttribution(text, title, href) {
+            var att = document.getElementsByClassName('leaflet-control-attribution')[0];
+            att.innerHTML += ' | ';
+            var newAtt;
+            if (href) {
+                newAtt = document.createElement('a');
+                newAtt.href = href;
+            } else {
+                newAtt = document.createElement('text');
+            }
+            newAtt.innerHTML = text;
+            if (title) {
+                newAtt.title = title;
+            }
+            att.appendChild(newAtt);
+        }
+        addAttribution('JAG2024');
+        addAttribution('RLIIM', 'Rural Landscapes of Iron Age Imperial Mesopotamia', 'https://scholarblogs.emory.edu/rliim/');
 
         map.createPane('basemap-pane');
         map.getPane('basemap-pane').style.zIndex = 250;
@@ -686,7 +706,7 @@
             groups = [["Elevation Model", "DEM"], ["Magnetometry", "MAG"]];
             tileLayers = ['./Data/mapTiles/DEM/{z}/{x}/{y}.png',
             './Data/mapTiles/MAG/{z}/{x}/{y}.png'];
-            attribution = 'JAG2024 | <a href="https://scholarblogs.emory.edu/rliim/">Rural Landscapes of Iron Age Imperial Mesopotamia';
+            //attribution = 'JAG2024 | <a href="https://scholarblogs.emory.edu/rliim/">Rural Landscapes of Iron Age Imperial Mesopotamia';
             shpLayers = ['https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/QachRresh_QachRresh.shp'];
             //dropdownName = 'dropdown-contents';
             //setting description creation vars
@@ -726,9 +746,9 @@
             url.options.maxZoom = 22;
             url.options.minZoom = 17;
             url.options.pane = 'basemap-pane'
-            if (setAttribution) {
-                url.options.attribution = attribution;
-            }
+            //if (setAttribution) {
+            //    url.options.attribution = attribution;
+            //}
             return url;
         }
 

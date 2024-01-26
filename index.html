@@ -404,7 +404,7 @@
                 shape.features.forEach(f => {
                     shpLayers.push('https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/QachRresh_' + f.properties.WebCode + '.shp');
                     this.layers.push({Description: f.properties.WebCode, Url: url + f.properties.WebCode + "/QachRresh_" + f.properties.WebCode + '.txt'});
-                    newTiles.push('https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapTiles/' + f.properties.WebCode + '/{z}/{x}/{y}.png');
+                    newTiles.push('./Data/mapTiles/' + f.properties.WebCode + '/{z}/{x}/{y}.png');
                     this.target += 2;
                 });
                 shpLayers.forEach(s => readSHPs(s));

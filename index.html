@@ -660,16 +660,20 @@
                     out.closeTooltip();
                 }
                 function startTimer (e) {
-                    this.timer = setTimeout(function() {}, 500);
+                    if(e.target.feature.properties.layerName == state.activeLayer) {
+                        this.timer = setTimeout(function() {}, 500);
+                    }
                 }
                 function hoverTimer (e) {
-                    var lat_lang = e.latlng;
-                    clearTimeout(this.timer);
-                    stopTimer(e, this);
-                    var out = this;
-                    this.timer = setTimeout(function() {
-                        out.bindTooltip(out._tooltip._content).openTooltip(lat_lang);
-                    }, 500);
+                    if (e.target.feature.properties.layerName == state.activeLayer) {
+                        var lat_lang = e.latlng;
+                        clearTimeout(this.timer);
+                        stopTimer(e, this);
+                        var out = this;
+                        this.timer = setTimeout(function() {
+                            out.bindTooltip(out._tooltip._content).openTooltip(lat_lang);
+                        }, 500);
+                    }
                 }
             }
         });
@@ -993,7 +997,10 @@
                     success: function () {
                         shp(url).then(function (out) {
                             out.name = name;
-                            out.features.forEach((f) => f.properties.fullName = '(' + f.properties.Label + ') ' + f.properties.Name);
+                            out.features.forEach((f) => {
+                                //f.properties.fullName = '(' + f.properties.Label + ') ' + f.properties.Name
+                                f.properties.layerName = out.name;
+                            });
                             layerCounter.shapes[out.name] = out;
                             layerCounter.iteration++;
                             if (out.name == baseShapefile) {

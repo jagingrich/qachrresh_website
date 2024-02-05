@@ -1,8 +1,20 @@
 Title: Operation B
 
+Subheader: The 2023 Season
+
+Operation B was continued from the 2023 excavations.  This year, the trench was led jointly by Kaercher and Creamer.  Over the course of the season, we expanded Op. B from its original 10x10m size to 11x16m with the goal of exposing the entirety of Room 1 (the northernmost room seen in the magnetometry data) and its associated walls. 
+
+After excavating down roughly 30cm, we began to be able to identify the eastern mudbrick wall bounding Room 1.  In order to define individual bricks, we excavated down further to 50cm before beginning to pick out the mortar lines in between bricks, which were able to be distinguished by color (slightly grayer than the reddish brick) and texture (crenelated) (see Fig. 13).  Once these were identified, we were able to measure the entire width of the wall to be around 2.7m thick – comparable to the walls in Op. A (and supporting our theory that both Buildings A and B were constructed at the same time).  We then expanded the eastern part of the trench 3m to the north and excavated down to 50cm to find the northeastern corner of Room 1.
+
+Caption: Plan drawing of the extent of Operation B during the 2023 field season.
+
+In addition to expanding Op. B to the east, we expanded the northernmost part of the trench 4m to the west to identify the western wall of Room 1 and its individual mudbricks.  Last year in 2022 we had been able to identify the probable NW corner of Room 1 based on the stark difference between ashy, ceramic-filled deposit and thicker, uniform sediment which bounded it to the north and west.  Indeed, we were able to confirm the corner this season and designate several rows of mudbricks in both the western and northern walls of Room 1.  We continued to trace the western wall in the western half of Op. B, where we excavated down a further 20cm from last year to bring it down to level with the northern trench.
+
+Our effort to identify the southern wall of Room 1 was more difficult.  Near the beginning of the season, we expanded the trench 1m to the south to try and find mudbrick, but were still unable to identify a wall running E-W.  We realized, while excavating what we believed to be the fill of Room 1, that there was preserved mudbrick below several layers of trash deposition (roughly 1.2m below surface).  Excavating this further, we were able to identify it as part of the southern wall for Room 1.  The final size for Room 1 measures roughly 7.5x6m.  
+
 Subheader: The 2022 Season
 The room excavated in Building B (Op. B) this season contained at least 130cm of fill from trash deposition. Below these multiple deposition events (which can be identified in the stratigraphy of the baulk) there was what appeared to be roughly 55cm of mudbrick collapse, likely from the roof of the building. Below this, there was a 30cm thick layer of hard-packed clay with very few artifacts. We interpret this layer to be the remains of the foundation trench constructed before Building B was built.
 
-Caption: The section drawing of Operation B's sounding (B-019), showing several deposition events.
+Caption: Section drawing of Operation B's sounding (B-019), showing several deposition events.
 
 While initially we approached Qach Rresh believing it to be occupied only in the late Neo-Assyrian period (c. 750-600 BCE) we now recognize that it was also used in the post-Assyrian period.  The buildings may have been constructed in the Neo-Assyrian period, abandoned, and then reused in the post-Assyrian period, based on preliminary interpretations of the ceramic material.  Overall, we are also interested in the potential to investigate the post-Assyrian occupation of the Erbil Plain, considering it has been largely underrepresented in archaeological studies.

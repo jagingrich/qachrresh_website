@@ -1,5 +1,11 @@
 Title: Operation A
 
+Subheader: The 2023 Season
+
+Operation A was continued from the 2022 excavations. This year, the trench was led by Swerida and Maynard. The excavations of Op.A had two main goals this season: one, to better understand the relationship of the wall (A-013) found during the 2022 field season to its surrounding architecture, and two, the relationship of probable rooms and floor surfaces, also newly discovered last year. 
+
+In the first week, we expanded Op. A northward from its original 3x10m size to 5x10m in an effort to reconstruct the entirety of the wall (now termed wall A-20) and catch an additional corner of a storeroom to the NE. After excavating roughly 30 cm through a soil matrix heavily affected by plowing and root activity, we found a layer with a dense concentration of calcium carbonate (CaCO3) crystals marking the preserved course of the continuation of mudbrick wall A-20.  After shaving this layer off by about 5 cm in order to find the mortar lines, we began to delineate individual bricks. Although the mudbricks of wall A-020 were uniformly of 33×33 cm dimensions, we found that the original builders of this wall did not build each wall course precisely on top of each other. Between the three exposed courses of brick at various points of wall A-020, each row was placed slightly differently from the row above it. Moreover, the builders included additional materials, such as small and medium-sized rocks, ceramic sherds, and animal bones, to create individual mudbricks. As preserved, wall A-020 is roughly 7 rows wide and 4 courses deep.
+
 Subheader: The 2022 Season
 In Operation A we excavated down in 20cm intervals with the intention of uncovering a large set of walls bounding the northwestern part of the courtyard in the main building identified through magnetometry.  At a depth of around 50cm, the texture of the soil matrix began to harden, becoming thick and difficult to excavate.  While the walls were difficult to identify due to this uniform matrix, we were able to distinguish the wall (A-013) running roughly from NW-SE based on a pit that had been cut into the fill of the building.  The pit itself was filled with ash, charcoal, animal bone, and broken pottery.
 

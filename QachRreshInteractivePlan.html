@@ -332,7 +332,7 @@
                         updateText(select);
                     }
                     map.setMaxZoom(21);
-                    map.setMinZoom(17);
+                    map.setMinZoom(15);
                     this.visiblePane('basemap-pane', 'overdata-pane');
                     document.getElementById('leaflet-refresh-container').style.display = 'none';
                     document.getElementById('leaflet-basemap-toggle-container').style.display = 'block';
@@ -567,12 +567,12 @@
         divCreate(sidebarText, 'sidebar-' + _sidebar.side);
 
         //creating map bounds
-        var mapbounds = L.latLngBounds(L.latLng(40.5005, 25.5312), L.latLng(40.5016, 25.5332));
+        var mapbounds = L.latLngBounds(L.latLng(33.7878, -84.3238), L.latLng(33.78954, -84.3228));
 
         //creating map variable & layer control
         var map = L.map('map', {
-            center: [40.5011, 25.5322],
-            zoom: 18
+            center: [33.7887, -84.3233],
+            zoom: 16
         });
         var control = L.control.layers({}, null, { collapsed: false }).addTo(map);
         control._container.id = 'leaflet-basemap-toggle-container';

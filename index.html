@@ -396,12 +396,14 @@
             shapes: {},
             tiles: {},
             layers: [],
+            baseAddedLayers: [],
             count: 0,
             target: 0,
             baseCheck(shape) {
                 this.layers.push({Description: 'QachRresh', Url: url + 'QachRresh/QachRresh_QachRresh.txt'});
                 var newTiles = [];
                 shape.features.forEach(f => {
+                    this.baseAddedLayers.push('QachRresh_' + f.properties.WebCode);
                     shpLayers.push('https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/QachRresh_' + f.properties.WebCode + '.shp');
                     this.layers.push({Description: f.properties.WebCode, Url: url + f.properties.WebCode + "/QachRresh_" + f.properties.WebCode + '.txt'});
                     newTiles.push('./Data/mapTiles/' + f.properties.WebCode + '/{z}/{x}/{y}.png');
@@ -448,19 +450,7 @@
                         }
                     );
                     Object.values(layerCounter.shapes).forEach((s) => {
-                        if(s.name == 'QachRresh_QachRresh') {
-                            var over = L.geoJSON(s, {
-                                style: styleTransparent,
-                                onEachFeature: (feature, layer) => onEachFeature(feature, layer, true, 0.1),
-                                pane: 'click-pane'
-                            }).addTo(map);
-                            getAllFeatures(over, true).forEach((v) => {
-                                v.bindTooltipDelayed(v.feature.properties.Name, 
-                                { sticky: true, className: 'leaflet-textTitle' });
-                                v.layerName = s.name;
-                            });
-                        }
-                        else {
+                        if(layerCounter.baseAddedLayers.includes(s.name)) {
                             var over = L.geoJSON(s, {
                                 style: styleTransparent,
                                 onEachFeature: (feature, layer) => onEachFeature(feature, layer),
@@ -470,6 +460,30 @@
                                 v.bindTooltipDelayed(v.feature.properties.Name, 
                                 { sticky: true, className: 'leaflet-textTitle' });
                                 v.layerName = s.name;
+                            });
+                        }
+                        else if (s.name == baseShapefile) {
+                            var over = L.geoJSON(s, {
+                                style: styleOverlay,
+                                onEachFeature: (feature, layer) => onEachFeature(feature, layer, true, 0.1, true),
+                                pane: 'click-pane'
+                            }).addTo(map);
+                            getAllFeatures(over, true).forEach((v) => {
+                                v.bindTooltipDelayed(v.feature.properties.Name, 
+                                { sticky: true, className: 'leaflet-textTitle' });
+                                v.layerName = s.name;
+                                v.bringToFront();
+                            });
+                        } else {
+                            var over = L.geoJSON(s, {
+                                style: styleTransparent,
+                                pane: 'click-pane'
+                            }).addTo(map);
+                            getAllFeatures(over, true).forEach((v) => {
+                                v.bindTooltipDelayed(v.feature.properties.Name, 
+                                { sticky: true, className: 'leaflet-textTitle' });
+                                v.layerName = s.name;
+                                v.bringToBack();
                             });
                         }
                     });
@@ -765,10 +779,21 @@
         function styleTransparent() {
             return {
                 fillColor: '#00000000',
-                weight: 2,
+                weight: 1.5,
                 opacity: 0.85,
                 color: '#FFF',
                 fillOpacity: 0
+            }
+        }
+
+        //operations overlay layer style
+        function styleOverlay() {
+            return {
+                fillColor: '#059FDC',
+                weight: 2.5,
+                opacity: 0.85,
+                color: '#059FDC',
+                fillOpacity: 0.3
             }
         }
 
@@ -788,9 +813,30 @@
             }
         }
 
+        //mouseover overlay highlight behavior and highlight reset
+        function highlightOverlayFeature(e) {
+            e.target.setStyle({
+                fillColor: '#059FDC',
+                weight: 3,
+                opacity: 1,
+                color: '#059FDC',
+                dashArray: '',
+                fillOpacity: 0.50
+            });
+
+            if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+                e.target.bringToFront();
+            }
+        }
+
         //this is the reset
         function resetHighlight(e) {
             e.target.setStyle(styleTransparent());
+        }
+
+        //this is the overlay reset
+        function resetOverlayHighlight(e) {
+            e.target.setStyle(styleOverlay());
         }
 
         //zoom to feature from given code
@@ -831,12 +877,20 @@
         }
 
         //layer responsiveness
-        function onEachFeature(feature, layer, fitZoom = false, padding = 0) {
-            layer.on({
-                mouseover: highlightFeature,
-                mouseout: resetHighlight,
-                click: (e, event) => selectFeature(e, fitZoom, padding)
-            });
+        function onEachFeature(feature, layer, fitZoom = false, padding = 0, overlay = false) {
+            if (overlay) {
+                layer.on({
+                    mouseover: highlightOverlayFeature,
+                    mouseout: resetOverlayHighlight,
+                    click: (e, event) => selectFeature(e, fitZoom, padding)
+                });
+            } else {
+                layer.on({
+                    mouseover: highlightFeature,
+                    mouseout: resetHighlight,
+                    click: (e, event) => selectFeature(e, fitZoom, padding)
+                });
+            }
         }
 
         //on changing dropdown selection

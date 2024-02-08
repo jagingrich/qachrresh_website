@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+    <TileMap version="1.0.0" tilemapservice="http://tms.osgeo.org/1.0.0">
+      <Title>Qach Rresh Operation B 2022</Title>
+      <Abstract></Abstract>
+      <SRS>EPSG:3857</SRS>
+      <BoundingBox minx="-84.32377373450996" miny="33.78943804327699" maxx="-84.32364789728119" maxy="33.78954072801408"/>
+      <Origin x="-84.32377373450996" y="33.78943804327699"/>
+      <TileFormat width="256" height="256" mime-type="image/png" extension="png"/>
+      <TileSets profile="mercator">
+        <TileSet href="21" units-per-pixel="0.07464553542137" order="21"/>
+        <TileSet href="22" units-per-pixel="0.03732276771069" order="22"/>
+        <TileSet href="23" units-per-pixel="0.01866138385534" order="23"/>
+        <TileSet href="24" units-per-pixel="0.00933069192767" order="24"/>
+      </TileSets>
+    </TileMap>
+    

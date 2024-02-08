@@ -351,7 +351,7 @@
                         updateText(select);
                     }
                     map.setMaxZoom(21);
-                    map.setMinZoom(15);
+                    map.setMinZoom(17);
                     this.visiblePane(select, hide);
                     document.getElementById('leaflet-refresh-container').style.display = 'none';
                     map.addControl(layerCounter.controls[select]);
@@ -425,7 +425,7 @@
                 this.layers.push({Description: 'QachRresh', Url: url + 'QachRresh/QachRresh_QachRresh.txt'});
                 var newTiles = [];
                 shape.features.forEach(f => {
-                    //console.log(f.properties);
+                    console.log(f.properties);
                     //UPDATE FOR CHECKING YEARS FIELD AND ADDING ADDITIONAL SHAPES AND TILES
                     this.baseAddedLayers.push('QachRresh_' + f.properties.WebCode);
                     shpLayers.push('https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/QachRresh_' + f.properties.WebCode + '.shp');

@@ -307,6 +307,7 @@
         const state = {
             state: 'QachRresh',
             activeLayer: 'QachRresh_QachRresh',
+            panes: [],
             bounds: mapbounds,
             center: 0,
             padding: 0,
@@ -314,16 +315,34 @@
                 if (delay == null) {
                     delay = 0;
                 }
+                var showArr = [];
+                var hideArr = [];
+                if (typeof show === 'string') {
+                    showArr.push(show);
+                } else {
+                    showArr = show;
+                }
+                if (typeof hide === 'string') {
+                    hideArr.push(hide);
+                } else {
+                    hideArr = hide;
+                }
                 setTimeout(function() {
-                    map.getPane(hide).style.opacity = 0;
-                    map.getPane(show).style.opacity = 1;
+                    hideArr.forEach(h => map.getPane(h + '-pane').style.opacity = 0);
+                    showArr.forEach(s => map.getPane(s + '-pane').style.opacity = 1);
                     setTimeout(function() {
-                        map.getPane(hide).style.zIndex = 200;
-                        map.getPane(show).style.zIndex = 250;
+                        hideArr.forEach(h => map.getPane(h + '-pane').style.zIndex = 200);
+                        showArr.forEach(s => map.getPane(s + '-pane').style.zIndex = 250);
                     }, 1000);
                 }, delay);
             },
             update(select) {
+                var hide = [];
+                this.panes.forEach(p => {
+                    if (p != select) {
+                        hide.push(p);
+                    }
+                });
                 if (Object.keys(layerCounter.shapes).includes('QachRresh_' + select)) {
                     this.activeLayer = 'QachRresh_' + select;
                 } 
@@ -332,10 +351,11 @@
                         updateText(select);
                     }
                     map.setMaxZoom(21);
-                    map.setMinZoom(17);
-                    this.visiblePane('basemap-pane', 'overdata-pane');
+                    map.setMinZoom(15);
+                    this.visiblePane(select, hide);
                     document.getElementById('leaflet-refresh-container').style.display = 'none';
-                    document.getElementById('leaflet-basemap-toggle-container').style.display = 'block';
+                    map.addControl(layerCounter.controls[select]);
+                    hide.forEach(h => map.removeControl(layerCounter.controls[h]));
                     _sidebar.setSidebar('right');
                     updateWidth();
                     this.center = this.bounds.getCenter().lng;
@@ -344,12 +364,13 @@
                     if (txt.texts != null) {
                         updateText(select);
                     }
-                    map.setMaxZoom(23);
+                    map.setMaxZoom(24);
                     map.setMinZoom(21);
-                    this.visiblePane('overdata-pane', 'basemap-pane', 1000);
+                    this.visiblePane(select, hide, 1000);
                     setTimeout(function() {
                         document.getElementById('leaflet-refresh-container').style.display = 'block';
-                        document.getElementById('leaflet-basemap-toggle-container').style.display = 'none';
+                        map.addControl(layerCounter.controls[select]);
+                        hide.forEach(h => map.removeControl(layerCounter.controls[h]));
                     }, 1500)
                     if (this.bounds.getCenter().lng > this.center) {
                         _sidebar.setSidebar('left');
@@ -397,16 +418,19 @@
             tiles: {},
             layers: [],
             baseAddedLayers: [],
+            controls: {},
             count: 0,
             target: 0,
             baseCheck(shape) {
                 this.layers.push({Description: 'QachRresh', Url: url + 'QachRresh/QachRresh_QachRresh.txt'});
                 var newTiles = [];
                 shape.features.forEach(f => {
+                    //console.log(f.properties);
+                    //UPDATE FOR CHECKING YEARS FIELD AND ADDING ADDITIONAL SHAPES AND TILES
                     this.baseAddedLayers.push('QachRresh_' + f.properties.WebCode);
                     shpLayers.push('https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/QachRresh_' + f.properties.WebCode + '.shp');
                     this.layers.push({Description: f.properties.WebCode, Url: url + f.properties.WebCode + "/QachRresh_" + f.properties.WebCode + '.txt'});
-                    newTiles.push('./Data/mapTiles/' + f.properties.WebCode + '/{z}/{x}/{y}.png');
+                    newTiles.push('./Data/mapTiles/' + f.properties.WebCode + '_2023/{z}/{x}/{y}.png');
                     this.target += 2;
                 });
                 shpLayers.forEach(s => readSHPs(s));
@@ -421,7 +445,7 @@
                     });
                     addLayerGroups(
                         mapInput = map,
-                        layerControl = control,
+                        layerControl = layerCounter.controls['QachRresh'],
                         layers = tilegroups,
                         groups = generateLayerGroups({ groups: groups }),
                         functionOnLoad = function () {
@@ -451,10 +475,15 @@
                     );
                     Object.values(layerCounter.shapes).forEach((s) => {
                         if(layerCounter.baseAddedLayers.includes(s.name)) {
+                            var subName = s.name.replace("QachRresh_", "");
+                            layerCounter.controls[subName] = L.control.layers({}, null, { collapsed: false }).addTo(map);
+                            map.createPane(subName + '-pane');
+                            map.getPane(subName + '-pane').style.zIndex = 200;
+                            state.panes.push(subName);
                             var over = L.geoJSON(s, {
                                 style: styleTransparent,
                                 onEachFeature: (feature, layer) => onEachFeature(feature, layer),
-                                pane: 'overdata-pane'
+                                pane: subName + '-pane'
                             }).addTo(map);
                             Object.values(over._layers).forEach((v) => {
                                 v.bindTooltipDelayed(v.feature.properties.Name, 
@@ -463,6 +492,7 @@
                             });
                         }
                         else if (s.name == baseShapefile) {
+                            state.panes.push('QachRresh');
                             var over = L.geoJSON(s, {
                                 style: styleOverlay,
                                 onEachFeature: (feature, layer) => onEachFeature(feature, layer, true, 0.1, true),
@@ -477,7 +507,7 @@
                         } else {
                             var over = L.geoJSON(s, {
                                 style: styleTransparent,
-                                pane: 'click-pane'
+                                pane: 'QachRresh-pane'
                             }).addTo(map);
                             getAllFeatures(over, true).forEach((v) => {
                                 v.bindTooltipDelayed(v.feature.properties.Name, 
@@ -493,15 +523,18 @@
                             tileops.push(t);
                         }
                     });
-                    function opLayer(url) {
+                    function opLayer(url, pane) {
                         url.options.maxZoom = 24;
                         url.options.minZoom = 17;
-                        url.options.pane = 'overdata-pane'
-                        //url.options.attribution = attribution;
+                        url.options.pane = pane
                         return url;
                     }
                     tileops.forEach(t => {
-                        opLayer(t).addTo(map);
+                        if (layerCounter.controls[t.Name]._layers.length == 0) {
+                            layerCounter.controls[t.Name].addBaseLayer(opLayer(t, t.Name + '-pane').addTo(map), t.Year);
+                        } else {
+                            layerCounter.controls[t.Name].addBaseLayer(opLayer(t, t.Name + '-pane'), t.Year);
+                        }
                     })
                 }
             },
@@ -588,36 +621,15 @@
             center: [33.7887, -84.3233],
             zoom: 16
         });
-        var control = L.control.layers({}, null, { collapsed: false }).addTo(map);
-        control._container.id = 'leaflet-basemap-toggle-container';
+        layerCounter.controls['QachRresh'] = L.control.layers({}, null, { collapsed: false }).addTo(map);
 
-        //function to add elements to map attribution
-        function addAttribution(text, title, href) {
-            var att = document.getElementsByClassName('leaflet-control-attribution')[0];
-            att.innerHTML += ' | ';
-            var newAtt;
-            if (href) {
-                newAtt = document.createElement('a');
-                newAtt.href = href;
-            } else {
-                newAtt = document.createElement('text');
-            }
-            newAtt.innerHTML = text;
-            if (title) {
-                newAtt.title = title;
-            }
-            att.appendChild(newAtt);
-        }
-        addAttribution('JAG2024');
-        addAttribution('RLIIM', 'Rural Landscapes of Iron Age Imperial Mesopotamia', 'https://scholarblogs.emory.edu/rliim/');
-
-        map.createPane('basemap-pane');
-        map.getPane('basemap-pane').style.zIndex = 250;
-        map.createPane('overdata-pane');
-        map.getPane('overdata-pane').style.zIndex = 200;
+        map.createPane('QachRresh-pane');
+        map.getPane('QachRresh-pane').style.zIndex = 250;
+        //map.createPane('overdata-pane');
+        //map.getPane('overdata-pane').style.zIndex = 200;
         map.createPane('click-pane');
         map.getPane('click-pane').style.zIndex = 300;
-        map.getPane('basemap-pane').appendChild(map.getPane('click-pane'));
+        map.getPane('QachRresh-pane').appendChild(map.getPane('click-pane'));
 
         //setting bounds on load
         state.padding = 0.1;
@@ -635,6 +647,11 @@
                 layerCounter.tiles[t] = L.tileLayer(t, {
                     tms: true
                 });
+                var name = t.split('/mapTiles/')[1];
+                name = name.split('/')[0];
+                name = name.split('_');
+                layerCounter.tiles[t].Name = name[0];
+                layerCounter.tiles[t].Year = name[1];
                 layerCounter.iteration++;
                 updateProgress(1 / tiles.length, 4);
             });
@@ -717,10 +734,10 @@
 
         //update initial inputs for layers, groupings, urls, etc.
         function updateInputs() {
-            groups = [["Elevation Model", "DEM"], ["Magnetometry", "MAG"]];
+            groups = [["Magnetometry", "MAG"], ["Elevation Model", "DEM"]];
             tileLayers = ['./Data/mapTiles/DEM/{z}/{x}/{y}.png',
             './Data/mapTiles/MAG/{z}/{x}/{y}.png'];
-            //attribution = 'JAG2024 | <a href="https://scholarblogs.emory.edu/rliim/">Rural Landscapes of Iron Age Imperial Mesopotamia';
+            attribution = 'JAG2024 | <a href="https://scholarblogs.emory.edu/rliim/">Rural Landscapes of Iron Age Imperial Mesopotamia';
             shpLayers = ['https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/QachRresh_QachRresh.shp',
             'https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/QachRresh_Walls.shp'];
             //dropdownName = 'dropdown-contents';
@@ -760,10 +777,10 @@
         function tileLayer(url, setAttribution = false) {
             url.options.maxZoom = 22;
             url.options.minZoom = 17;
-            url.options.pane = 'basemap-pane'
-            //if (setAttribution) {
-            //    url.options.attribution = attribution;
-            //}
+            url.options.pane = 'QachRresh-pane'
+            if (setAttribution) {
+                url.options.attribution = attribution;
+            }
             return url;
         }
 

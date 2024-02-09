@@ -343,7 +343,7 @@
                         hide.push(p);
                     }
                 });
-                if (Object.keys(layerCounter.shapes).includes('QachRresh_' + select)) {
+                if (Object.keys(layerCounter.controls).includes(select)) {
                     this.activeLayer = 'QachRresh_' + select;
                 } 
                 if (select == 'QachRresh') {
@@ -355,6 +355,7 @@
                     this.visiblePane(select, hide);
                     document.getElementById('leaflet-refresh-container').style.display = 'none';
                     map.addControl(layerCounter.controls[select]);
+
                     hide.forEach(h => map.removeControl(layerCounter.controls[h]));
                     _sidebar.setSidebar('right');
                     updateWidth();
@@ -418,23 +419,37 @@
             tiles: {},
             layers: [],
             baseAddedLayers: [],
+            operations: {},
             controls: {},
             count: 0,
             target: 0,
-            baseCheck(shape) {
-                this.layers.push({Description: 'QachRresh', Url: url + 'QachRresh/QachRresh_QachRresh.txt'});
-                var newTiles = [];
-                shape.features.forEach(f => {
-                    console.log(f.properties);
-                    //UPDATE FOR CHECKING YEARS FIELD AND ADDING ADDITIONAL SHAPES AND TILES
-                    this.baseAddedLayers.push('QachRresh_' + f.properties.WebCode);
-                    shpLayers.push('https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/QachRresh_' + f.properties.WebCode + '.shp');
-                    this.layers.push({Description: f.properties.WebCode, Url: url + f.properties.WebCode + "/QachRresh_" + f.properties.WebCode + '.txt'});
-                    newTiles.push('./Data/mapTiles/' + f.properties.WebCode + '_2023/{z}/{x}/{y}.png');
-                    this.target += 2;
-                });
-                shpLayers.forEach(s => readSHPs(s));
-                loadTiles(newTiles);
+            shapeCount: 0,
+            shapeTarget: 0,
+            baseCheck(count) {
+                if (count == this.shapeTarget) {
+                    this.layers.push({Description: 'QachRresh', Url: url + 'QachRresh/QachRresh_QachRresh.txt'});
+                    var newTiles = [];
+                    this.baseShapefile.features.forEach(f => {
+                        var operation = f.properties.WebCode;
+                        var years = f.properties.Years.split('/');
+                        this.layers.push({Description: operation, Url: url + operation + "/QachRresh_" + operation + '.txt'});
+                        this.controls[operation] = L.control.layers({}, null, { collapsed: false }).addTo(map);
+                        years.forEach(y => {
+                            var newShp = {features: [], name: 'QachRresh_' + operation + '_' + y, type: 'FeatureCollection', layerName: 'QachRresh_' + operation};
+                            this.operationShp.features.forEach(s => {
+                                if (s.properties.Operation == operation && s.properties.Year == y) {
+                                    s.properties.layerName = 'QachRresh_' + operation;
+                                    newShp.features.push(s);
+                                }
+                            });
+                            this.shapes['QachRresh_' + operation + '_' + y] = newShp;
+                            var tileUrl = './Data/mapTiles/' + f.properties.WebCode + '_' + y + '/{z}/{x}/{y}.png';
+                            this.operations['QachRresh_' + f.properties.WebCode + '_' + y] = {Operation: f.properties.WebCode, Year: y, tileUrl: tileUrl};
+                            this.baseAddedLayers.push('QachRresh_' + f.properties.WebCode + '_' + y);
+                        });
+                    });
+                    this.iteration++;
+                }
             },
             update() {
                 if (this.count == this.target) {
@@ -474,23 +489,41 @@
                         }
                     );
                     Object.values(layerCounter.shapes).forEach((s) => {
-                        if(layerCounter.baseAddedLayers.includes(s.name)) {
-                            var subName = s.name.replace("QachRresh_", "");
-                            layerCounter.controls[subName] = L.control.layers({}, null, { collapsed: false }).addTo(map);
+                        if (Object.keys(layerCounter.operations).includes(s.name)) {
+                            var op = layerCounter.operations[s.name];
+                            var subName = s.name.split('_')[1];
                             map.createPane(subName + '-pane');
                             map.getPane(subName + '-pane').style.zIndex = 200;
-                            state.panes.push(subName);
-                            var over = L.geoJSON(s, {
+                            //map.createPane(subName + '-over-pane');
+                            //map.getPane(subName + '-over-pane').style.zIndex = 300;
+                            //map.getPane(subName + '-pane').appendChild(map.getPane(subName + '-over-pane'));
+                            if (!state.panes.includes(subName)){
+                                state.panes.push(subName);
+                            }
+                            var newGroup = L.layerGroup();
+                            var newLayer = L.geoJSON(s, {
                                 style: styleTransparent,
                                 onEachFeature: (feature, layer) => onEachFeature(feature, layer),
                                 pane: subName + '-pane'
-                            }).addTo(map);
-                            Object.values(over._layers).forEach((v) => {
+                            }).addTo(newGroup);
+                            Object.values(newLayer._layers).forEach((v) => {
                                 v.bindTooltipDelayed(v.feature.properties.Name, 
                                 { sticky: true, className: 'leaflet-textTitle' });
                                 v.layerName = s.name;
                             });
+                            var newTile = L.tileLayer(op.tileUrl, {
+                                tms: true
+                            });
+                            newTile.Name = op.Operation;
+                            newTile.Year = op.Year;
+                            opLayer(newTile, subName + '-pane').addTo(newGroup);
+                            if (layerCounter.controls[op.Operation]._layers.length == 0) {
+                                layerCounter.controls[op.Operation].addBaseLayer(newGroup.addTo(map), op.Year);
+                                } else {
+                                layerCounter.controls[op.Operation].addBaseLayer(newGroup, op.Year);
+                               }
                         }
+                        else if(s.name == 'QachRresh_Operations') {}
                         else if (s.name == baseShapefile) {
                             state.panes.push('QachRresh');
                             var over = L.geoJSON(s, {
@@ -517,25 +550,13 @@
                             });
                         }
                     });
-                    var tileops = [];
-                    Object.values(this.tiles).forEach(t => {
-                        if (!tileLayers.includes(t._url)) {
-                            tileops.push(t);
-                        }
-                    });
                     function opLayer(url, pane) {
                         url.options.maxZoom = 24;
                         url.options.minZoom = 17;
                         url.options.pane = pane
                         return url;
                     }
-                    tileops.forEach(t => {
-                        if (layerCounter.controls[t.Name]._layers.length == 0) {
-                            layerCounter.controls[t.Name].addBaseLayer(opLayer(t, t.Name + '-pane').addTo(map), t.Year);
-                        } else {
-                            layerCounter.controls[t.Name].addBaseLayer(opLayer(t, t.Name + '-pane'), t.Year);
-                        }
-                    })
+                    updateProgress(1, 4);
                 }
             },
             get iteration() {
@@ -545,12 +566,12 @@
                 this.count = iteration;
                 this.update(this.count);
             },
-            get baseSet() {
-                return this.baseShapefile;
+            get shapeIter() {
+                return this.shapeCount;
             },
-            set baseSet(baseSet) {
-                this.baseShapefile = baseSet;
-                this.baseCheck(this.baseShapefile);
+            set shapeIter(shapeIter) {
+                this.shapeCount = shapeIter;
+                this.baseCheck(this.shapeCount);
             }
         }
 
@@ -625,11 +646,17 @@
 
         map.createPane('QachRresh-pane');
         map.getPane('QachRresh-pane').style.zIndex = 250;
-        //map.createPane('overdata-pane');
-        //map.getPane('overdata-pane').style.zIndex = 200;
         map.createPane('click-pane');
         map.getPane('click-pane').style.zIndex = 300;
         map.getPane('QachRresh-pane').appendChild(map.getPane('click-pane'));
+
+        //map.on('baselayerchange', function (e) {
+        //    e.layer._layers.forEach(l => {
+        //        if (!Object.keys(l).includes('_url')) {
+        //            l.bringToFront();
+        //        }
+        //    });
+        //});
 
         //setting bounds on load
         state.padding = 0.1;
@@ -638,7 +665,8 @@
         state.bounds = mapbounds;
 
         //reading in shapefiles
-        layerCounter.target = shpLayers.length * 2 + tileLayers.length;
+        layerCounter.target = shpLayers.length + tileLayers.length + 1;
+        layerCounter.shapeTarget = shpLayers.length;
         shpLayers.forEach(s => readSHPs(s));
 
         //loading tile layers
@@ -739,7 +767,8 @@
             './Data/mapTiles/MAG/{z}/{x}/{y}.png'];
             attribution = 'JAG2024 | <a href="https://scholarblogs.emory.edu/rliim/">Rural Landscapes of Iron Age Imperial Mesopotamia';
             shpLayers = ['https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/QachRresh_QachRresh.shp',
-            'https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/QachRresh_Walls.shp'];
+            'https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/QachRresh_Walls.shp',
+            'https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/QachRresh_Operations.shp'];
             //dropdownName = 'dropdown-contents';
             //setting description creation vars
             url = 'https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapDescriptions/';
@@ -879,7 +908,8 @@
         //selecting feature: click or dropdown
         function selectFeature(webCode, fitZoom = false, padding = 0) {
             //check if clicked on active layer
-            if(webCode.target.layerName == state.activeLayer) {
+            var layer = webCode.target.layerName.split('_')[1];
+            if('QachRresh_' + layer == state.activeLayer) {
                 //zoom to selection
                 if (padding != 0) {
                     state.padding = padding;
@@ -1080,9 +1110,9 @@
         function readSHPs(url) {
             url = url.replaceAll('.shp', '');
             var name = url.split('/')[url.split('/').length - 1];
-            if (Object.keys(layerCounter.shapes).includes(name)) {
-                layerCounter.iteration++;
-            } else {
+            //if (Object.keys(layerCounter.shapes).includes(name)) {
+            //    layerCounter.iteration++;
+            //} else {
                 $.ajax({
                     url: url + '.shp',
                     type: "head",
@@ -1094,17 +1124,23 @@
                                 f.properties.layerName = out.name;
                             });
                             layerCounter.shapes[out.name] = out;
-                            layerCounter.iteration++;
                             if (out.name == baseShapefile) {
-                                layerCounter.baseSet = out;
+                                //layerCounter.baseSet = out;
+                                layerCounter.baseShapefile = out;
                             }
+                            if (out.name == 'QachRresh_Operations') {
+                                layerCounter.operationShp = out;
+                            }
+                            layerCounter.iteration++;
+                            layerCounter.shapeIter++;
                         });
                     },
                     error: function () {
                         layerCounter.iteration++;
+                        layerCounter.shapeIter++;
                     }
                 });
-            }
+            //}
         }
 
         //creating legend

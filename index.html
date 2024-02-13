@@ -279,6 +279,9 @@
 
     <script>// initialize the map
 
+        //FUNCTIONS THAT CREATE AND RUN THE RLIIM QACH RRESH INTERACTIVE MAP PLAN
+        //Jared Gingrich 2024
+
         //progress counter for loading the interactive plan
         var elem = document.getElementById("progressBar");
         const counter = {
@@ -422,6 +425,16 @@
             controls: {},
             count: 0,
             target: 0,
+            shape: null,
+            shpCheck(shp) {
+                if (shp.name == baseShapefile) {
+                    this.baseShapefile = shp;
+                    this.baseSet(baseShapefile.replace('QachRresh_', ''));
+                }
+                if (shp.name == contextsShapefile) {
+                    this.operationShp = shp;
+                }
+            },
             baseSet(operation) {
                 //set up panes, layercontrols, and texts
                 map.createPane(operation + '-pane');
@@ -435,7 +448,7 @@
                         this.baseSet(operation);
                         years = f.properties.Years.split('/');
                         years.forEach(y => {
-                            var tileUrl = './Data/mapTiles/' + operation + '_' + y + '/{z}/{x}/{y}.png';
+                            var tileUrl = extension + '/Data/mapTiles/' + operation + '_' + y + '/{z}/{x}/{y}.png';
                             this.operations['QachRresh_' + operation + '_' + y] = {Operation: operation, Year: y, tileUrl: tileUrl};
                         });
                     });
@@ -490,7 +503,7 @@
                     Object.values(layerCounter.shapes).forEach((s) => {
                         //individual operations from combined operation layer
                         switch (s.name) {
-                            case 'QachRresh_Operations':
+                            case contextsShapefile:
                                 Object.values(layerCounter.operations).forEach(o => {
                                     var newShp = {features: [], name: 'QachRresh_' + o.Operation + '_' + o.Year, type: 'FeatureCollection', layerName: 'QachRresh_' + o.Operation};
                                     layerCounter.operationShp.features.forEach(s => {
@@ -566,29 +579,29 @@
         }
 
         //setting initial map variables
+        var extension = '.';
         var shpFiles = [];
-        var groups = [];
-        var tileLayers = [];
-        var shpLayers = [];
-        var attribution;
+        var groups = [['Magnetometry', 'MAG'], ['Elevation Model', 'DEM']];
+        var tileLayers = [extension + '/Data/mapTiles/DEM/{z}/{x}/{y}.png',
+            extension + '/Data/mapTiles/MAG/{z}/{x}/{y}.png'];
+        var shpLayers = ['https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/QachRresh_QachRresh.shp',
+            'https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/QachRresh_Walls.shp',
+            'https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/QachRresh_Operations.shp'];
         var dropdownName;
 
         //setting description creation vars
         var sidebarText = 'sidebar-content';
-        var url;
+        var url = 'https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapDescriptions/';
         var defaultWebID = 'QachRresh';
         var baseShapefile = 'QachRresh_QachRresh';
+        var contextsShapefile = 'QachRresh_Operations';
         var webID = defaultWebID;
-        var descriptions;
-        var dropdownDefault = [];
+        //var descriptions;
+        //var dropdownDefault = [];
         var remove = [];
         var replace = [];
         var width = 'width="' + roundWidth()[1] + 'px"';
         var w = window.innerWidth;
-        var layersCount = 0;
-
-        //pulling updated initialization vars
-        updateInputs();
 
         //creating divs for parts of interactive plan
         const _sidebar = {
@@ -626,11 +639,32 @@
         //creating map bounds
         var mapbounds = L.latLngBounds(L.latLng(33.7878, -84.3238), L.latLng(33.78954, -84.3228));
 
-        //creating map variable & layer control
+        //creating map variable
         var map = L.map('map', {
             center: [33.7887, -84.3233],
             zoom: 16
         });
+
+        //function to add elements to map attribution
+        function addAttribution(text, title, href) {
+            var att = document.getElementsByClassName('leaflet-control-attribution')[0];
+            att.innerHTML += ' | ';
+            var newAtt;
+            if (href) {
+                newAtt = document.createElement('a');
+                newAtt.href = href;
+            } else {
+                newAtt = document.createElement('text');
+            }
+            newAtt.innerHTML = text;
+            if (title) {
+                newAtt.title = title;
+            }
+            att.appendChild(newAtt);
+        }
+        addAttribution('JAG2024');
+        addAttribution('RLIIM', 'Rural Landscapes of Iron Age Imperial Mesopotamia', 'https://scholarblogs.emory.edu/rliim/');
+
 
         //setting bounds on load
         state.padding = 0.1;
@@ -730,29 +764,6 @@
             }
         });
 
-        //FUNCTIONS THAT CREATE AND RUN THE RLIIM QACH RRESH INTERACTIVE MAP PLAN
-        //Jared Gingrich 2023
-
-        //update initial inputs for layers, groupings, urls, etc.
-        function updateInputs() {
-            groups = [["Magnetometry", "MAG"], ["Elevation Model", "DEM"]];
-            tileLayers = ['./Data/mapTiles/DEM/{z}/{x}/{y}.png',
-            './Data/mapTiles/MAG/{z}/{x}/{y}.png'];
-            attribution = 'JAG2024 | <a href="https://scholarblogs.emory.edu/rliim/">Rural Landscapes of Iron Age Imperial Mesopotamia';
-            shpLayers = ['https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/QachRresh_QachRresh.shp',
-            'https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/QachRresh_Walls.shp',
-            'https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/QachRresh_Operations.shp'];
-            //dropdownName = 'dropdown-contents';
-            //setting description creation vars
-            url = 'https://raw.githubusercontent.com/jagingrich/qachrresh_website/main/Data/mapDescriptions/';
-            defaultWebID = 'QachRresh';
-            baseShapefile = 'QachRresh_QachRresh';
-            //dropdownDefault = ['<option value="' + defaultWebID + '" disabled selected hidden>Select Monument</option>',
-            //'<option value="' + defaultWebID + '">About: Interactive Plan</option>'];
-            //remove = ['JAG_UNEDITED', 'Glennon'];
-            //replace = {key: 'Bibliography:', replacement: 'Bibliography: Selected Bibliography'};
-        }
-
         //creating divs for parts of interactive plan in map, overlay divs
         function divCreate(divName, divContainer, type = 'div', functionOnCreate = null) {
             L.Control.newDiv = L.Control.extend({
@@ -776,13 +787,10 @@
         }
 
         //formatting for tile layers
-        function tileLayer(url, setAttribution = false) {
+        function tileLayer(url) {
             url.options.maxZoom = 22;
             url.options.minZoom = 17;
-            url.options.pane = 'QachRresh-pane'
-            if (setAttribution) {
-                url.options.attribution = attribution;
-            }
+            url.options.pane = 'QachRresh-pane';
             return url;
         }
 
@@ -1030,7 +1038,7 @@
                 groups.forEach(function (g) {
                     if (g.name != 'Other') {
                         if (t._url.match(g.keyword) != null) {
-                            tileLayer(t, true).addTo(g.layers);
+                            tileLayer(t).addTo(g.layers);
                             match = true;
                         }
                     }
@@ -1044,14 +1052,13 @@
                             }
                         });
                         if (out != null) {
-                            tileLayer(t, true).addTo(map);
+                            tileLayer(t).addTo(map);
                         }
                     }
                 });
                 if (!match) {
-                    tileLayer(t, true).addTo(groups[groups.findIndex((element) => element.name == "Other")].layers)
+                    tileLayer(t).addTo(groups[groups.findIndex((element) => element.name == "Other")].layers)
                 }
-                layersCount++;
             });
 
             //shp layers to groups
@@ -1060,15 +1067,14 @@
                 groups.forEach(function (g) {
                     if (g.name != 'Other') {
                         if (s.name.match(g.keyword) != null) {
-                            //jsonLayer(s).addTo(g.layers);
+                            jsonLayer(s).addTo(g.layers);
                             match = true;
                         }
                     }
                 });
                 if (!match) {
-                    //jsonLayer(s).addTo(groups[groups.findIndex((element) => element.name == "Other")].layers)
+                    jsonLayer(s).addTo(groups[groups.findIndex((element) => element.name == "Other")].layers)
                 }
-                layersCount++;
             });
             addLayers(mapInput, groups, layerControl);
 
@@ -1093,13 +1099,7 @@
                             f.properties.layerName = out.name;
                         });
                         layerCounter.shapes[out.name] = out;
-                        if (out.name == baseShapefile) {
-                            layerCounter.baseShapefile = out;
-                            layerCounter.baseSet(baseShapefile.replace('QachRresh_', ''));
-                        }
-                        if (out.name == 'QachRresh_Operations') {
-                            layerCounter.operationShp = out;
-                        }
+                        layerCounter.shpCheck(out);
                         layerCounter.iteration++;
                     });
                 },

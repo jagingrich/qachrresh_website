@@ -31,7 +31,7 @@
             background-color: #000000;
             left: 0;
             position: absolute;
-            transition: left 1000ms;
+            /*transition: left 1000ms;*/
         }
 
         #loading {
@@ -88,8 +88,8 @@
             line-height: 1.5;
             /* box-shadow: 0 1px 7px rgba(0, 0, 0, 0.65);
             -webkit-border-radius: 4px;
-            border-radius: 4px; */
-            transition: width 1000ms;
+            border-radius: 4px; 
+            transition: width 1000ms;*/
         }
         #sidebar-left{
             left: 0;
@@ -311,7 +311,7 @@
         const state = {
             state: 'QachRresh',
             activeLayer: 'QachRresh_QachRresh',
-            panes: [],
+            panes: {},
             bounds: mapbounds,
             center: 0,
             padding: 0,
@@ -342,7 +342,7 @@
             },
             update(select) {
                 var hide = [];
-                this.panes.forEach(p => {
+                Object.keys(this.panes).forEach(p => {
                     if (p != select) {
                         hide.push(p);
                     }
@@ -362,7 +362,7 @@
 
                     hide.forEach(h => map.removeControl(layerCounter.controls[h]));
                     if (roundWidth()[4] == 0) {
-                        _sidebar.setSidebar('right');
+                        _sidebar.setSidebar('right', true);
                     }
                     updateWidth();
                     this.center = this.bounds.getCenter().lng;
@@ -381,9 +381,9 @@
                     }, 1500)
                     if (roundWidth()[4] == 0) {
                         if (this.bounds.getCenter().lng > this.center) {
-                            _sidebar.setSidebar('left');
+                            _sidebar.setSidebar('left', true);
                         } else {
-                            _sidebar.setSidebar('right');
+                            _sidebar.setSidebar('right', true);
                         }
                     }
                     updateWidth();
@@ -444,12 +444,13 @@
                 //set up panes, layercontrols, and texts
                 map.createPane(operation + '-pane');
                 map.getPane(operation + '-pane').style.zIndex = 200;
-                state.panes.push(operation);
                 this.layers.push({Description: operation, Url: url + operation + "/QachRresh_" + operation + '.txt'});
                 this.controls[operation] = L.control.layers({}, null, { collapsed: false }).addTo(map);
                 if ('QachRresh_' + operation == baseShapefile) {
+                    state.panes[operation] = {Name: 'Qach Rresh', WebCode: 'QachRresh'};
                     this.baseShapefile.features.forEach(f => {
                         operation = f.properties.WebCode;
+                        state.panes[f.properties.WebCode] = {Name: f.properties.Name, WebCode: f.properties.WebCode};
                         this.baseSet(operation);
                         years = f.properties.Years.split('/');
                         years.forEach(y => {
@@ -611,16 +612,20 @@
         //creating divs for parts of interactive plan
         const _sidebar = {
             side: 'right',
-            setSidebar(show) {
-                hide = null;
+            setSidebar(show, transition) {
+                hide = 'right';
                 if (show == 'right') {
                     hide = 'left';
-                } else {
-                    hide = 'right';
-                }
+                } 
                 document.getElementById('sidebar-' + hide).style.width = '0px';
                 document.getElementById('sidebar-' + hide).style.padding = '0px';
                 if (show != this.side) {
+                    if (transition) {
+                        document.getElementById('map').style.transition = 'left 1000ms';
+                        Array.from(document.getElementsByClassName('sidebar')).forEach(s => {
+                            s.style.transition = 'width 1000ms';
+                        });
+                    }
                     w = roundWidth();
                     this.side = show;
                     Array.from(document.getElementById('sidebar-' + hide).children).forEach(c => {
@@ -639,6 +644,13 @@
                     }
                     document.getElementById('sidebar-' + show).style.width = w[0] + 'px';
                     document.getElementById('sidebar-' + show).style.padding = '10px';
+                    setTimeout(function () {
+                        document.getElementById('map').style.transition = null;
+                        Array.from(document.getElementsByClassName('sidebar')).forEach(s => {
+                            s.style.transition = null;
+                        });
+                    }, 1001);
+                    
                 }
             }
         };
@@ -706,7 +718,7 @@
         //listening for width change
         ['resize', 'focus'].forEach(function (e) {
             window.addEventListener(e, function () {
-                updateWidth();
+            updateWidth();
                 setTimeout(function () {
                     var orientate = 'landscape';
                     if (window.innerWidth < window.innerHeight) {
@@ -1358,7 +1370,7 @@
         //generating dropdown menu options from JSON inputs
         function dropdownOptions(inputs) {
             var optionsOut = [];
-            inputs.forEach((f) => optionsOut.push('<option value="' + f + '">' + f + '</option>'))
+            Object.values(inputs).forEach((f) => optionsOut.push('<option value="' + f.WebCode + '">' + f.Name + '</option>'))
             return optionsOut;
         }
 

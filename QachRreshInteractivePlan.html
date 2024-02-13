@@ -199,9 +199,10 @@
             overflow: hidden;
             height: 30px;
             padding: 4px 2px;
-            background-color: white;
+            background-color: rgb(0, 0, 0);
+            color: rgb(255, 255, 255);
             border-radius: 5px;
-            border-color: gray;
+            border-color: rgb(77, 77, 77);
             border-style: solid;
             border-width: 1px 1px 1px 1px;
             opacity: 0.7;
@@ -360,7 +361,9 @@
                     map.addControl(layerCounter.controls[select]);
 
                     hide.forEach(h => map.removeControl(layerCounter.controls[h]));
-                    _sidebar.setSidebar('right');
+                    if (roundWidth()[4] == 0) {
+                        _sidebar.setSidebar('right');
+                    }
                     updateWidth();
                     this.center = this.bounds.getCenter().lng;
                 }
@@ -376,10 +379,12 @@
                         map.addControl(layerCounter.controls[select]);
                         hide.forEach(h => map.removeControl(layerCounter.controls[h]));
                     }, 1500)
-                    if (this.bounds.getCenter().lng > this.center) {
-                        _sidebar.setSidebar('left');
-                    } else {
-                        _sidebar.setSidebar('right');
+                    if (roundWidth()[4] == 0) {
+                        if (this.bounds.getCenter().lng > this.center) {
+                            _sidebar.setSidebar('left');
+                        } else {
+                            _sidebar.setSidebar('right');
+                        }
                     }
                     updateWidth();
                 }
@@ -479,17 +484,18 @@
                                 v.bindTooltipDelayed(v.feature.properties.Name, 
                                 { sticky: true, className: 'leaflet-textTitle' });
                             });
-                            //divCreate(divName = dropdownName, //adding dropdown to map
-                            //    divContainer = 'dropdown',
-                            //    type = 'select',
-                            //    functionOnCreate = function (newDiv) {
-                            //        //creating dropdown
-                            //        options = [...dropdownDefault, ...dropdownOptions(uniqueFeatures(getAllFeatures(null, control), 'fullName', 'Label'), 'WebCode', 'fullName')];
-                            //        options.forEach((option) => newDiv.innerHTML += option);
-                            //        //dropdown appearance/settings
-                            //        newDiv.addEventListener('change', onSelect);
-                            //        newDiv.title = "Select Monument Name to Zoom In";
-                            //    });
+                            divCreate(divName = dropdownName, //adding dropdown to map
+                                divContainer = 'dropdown',
+                                type = 'select',
+                                functionOnCreate = function (newDiv) {
+                                    //creating dropdown
+                                    options = [dropdownOptions(state.panes)];
+                                    options.forEach((option) => newDiv.innerHTML += option);
+                                    //dropdown appearance/settings
+                                    newDiv.addEventListener('change', onSelect);
+                                    newDiv.title = "Select Monument Name to Zoom In";
+                                }
+                            ); 
                             txt.loadText(layerCounter.layers); //loading and formatting text descriptions for monuments
                             addRefresh(); //adding refresh button
                             addRecenterControl(); //adding recentering control to map
@@ -579,7 +585,7 @@
         }
 
         //setting initial map variables
-        var extension = 'https://raw.githubusercontent.com/jagingrich/qachrresh_website/main';
+        var extension = '.';
         var shpFiles = [];
         var groups = [['Magnetometry', 'MAG'], ['Elevation Model', 'DEM']];
         var tileLayers = [extension + '/Data/mapTiles/DEM/{z}/{x}/{y}.png',
@@ -587,7 +593,7 @@
         var shpLayers = ['https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/QachRresh_QachRresh.shp',
             'https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/QachRresh_Walls.shp',
             'https://cdn.rawgit.com/jagingrich/qachrresh_website/main/Data/mapFeatures/QachRresh_Operations.shp'];
-        var dropdownName;
+        var dropdownName = 'dropdown-contents';
 
         //setting description creation vars
         var sidebarText = 'sidebar-content';
@@ -596,7 +602,6 @@
         var baseShapefile = 'QachRresh_QachRresh';
         var contextsShapefile = 'QachRresh_Operations';
         var webID = defaultWebID;
-        //var descriptions;
         //var dropdownDefault = [];
         var remove = [];
         var replace = [];
@@ -618,22 +623,27 @@
                 if (show != this.side) {
                     w = roundWidth();
                     this.side = show;
-                    if (document.getElementById('sidebar-' + hide).firstChild != null) {
-                        node = document.getElementById('sidebar-' + hide).firstChild;
-                        document.getElementById('sidebar-' + show).appendChild(node);
-                    }
+                    Array.from(document.getElementById('sidebar-' + hide).children).forEach(c => {
+                        document.getElementById('sidebar-' + show).appendChild(c);
+                    });
                     if (show == 'right') {
                         document.getElementById('map').style.left = '0px';
-                        document.getElementById('sidebar-' + show).firstChild.style.transform = null;
+                        Array.from(document.getElementById('sidebar-' + show).children).forEach(c => {
+                            c.style.transform = null;
+                        });
                     } else {
                         document.getElementById('map').style.left = w[0] + 'px';
-                        document.getElementById('sidebar-' + show).firstChild.style.transform = 'scaleX(-1)';
+                        Array.from(document.getElementById('sidebar-' + show).children).forEach(c => {
+                            c.style.transform = 'scaleX(-1)';
+                        });
                     }
                     document.getElementById('sidebar-' + show).style.width = w[0] + 'px';
                     document.getElementById('sidebar-' + show).style.padding = '10px';
                 }
             }
         };
+
+        divCreate('dropdown', 'map');
         divCreate(sidebarText, 'sidebar-' + _sidebar.side);
 
         //creating map bounds
@@ -889,19 +899,33 @@
         //selecting feature: click or dropdown
         function selectFeature(webCode, fitZoom = false, padding = 0) {
             //check if clicked on active layer
-            var layer = webCode.target.layerName.replace('QachRresh_', '');
-            layer = layer.split('_')[0];
-            if('QachRresh_' + layer == state.activeLayer) {
+            if (webCode.type == 'click') {
+                webCode = webCode.target;
+                var layer = webCode.layerName.replace('QachRresh_', '');
+                layer = layer.split('_')[0];
+                if('QachRresh_' + layer == state.activeLayer) {
+                    //zoom to selection
+                    if (padding != 0) {
+                        state.padding = padding;
+                    }
+                    if (fitZoom) {
+                        state.bounds = webCode.getBounds();
+                        map.setMaxBounds(webCode.getBounds().pad(1));
+                    }
+                    state.select = webCode.feature.properties.WebCode;
+                    map.flyToBounds(webCode.getBounds().pad(padding));
+                }
+            } else if (webCode.type == 'select') {
                 //zoom to selection
                 if (padding != 0) {
                     state.padding = padding;
                 }
                 if (fitZoom) {
-                    state.bounds = webCode.target.getBounds();
-                    map.setMaxBounds(webCode.target.getBounds().pad(1));
+                    state.bounds = webCode.getBounds();
+                    map.setMaxBounds(webCode.getBounds().pad(1));
                 }
-                state.select = webCode.target.feature.properties.WebCode;
-                map.flyToBounds(webCode.target.getBounds().pad(padding));
+                state.select = webCode.WebCode;
+                map.flyToBounds(webCode.getBounds().pad(padding));
             }
         }
 
@@ -926,11 +950,23 @@
         function onSelect() {
             var dropdown = document.getElementById(dropdownName);
             var index = dropdown.options.selectedIndex;
+            var feature;
+            var padding = 0;
             if (dropdown[index].value == defaultWebID) {
-                selectFeature(defaultWebID)
+                feature = L.geoJSON(layerCounter.baseShapefile);
+                padding = 0.1;
             } else {
-                selectFeature(dropdown[index].value);
+                layerCounter.baseShapefile.features.forEach(f => {
+                    if (f.properties.WebCode == dropdown[index].value) {
+                        feature = L.geoJSON(f);
+                        feature = Object.values(feature._layers)[0];
+                    }
+                });
             }
+            feature.type = "select";
+            feature.layerName = "QachRresh_QachRresh";
+            feature.WebCode = dropdown[index].value;
+            selectFeature(feature, true, padding);
         }
 
         //updating text and dropdown selection
@@ -1228,15 +1264,15 @@
             var topWidth = 10 * tops.length;
             tops.forEach((f) => topWidth += f.clientWidth);
             if (window.innerWidth < window.innerHeight) {
-                return [q, q - 40, q, q - 40];
+                return [q, q - 40, q, q - 40, 1];
             }
             else {
-                return q < 750 ? [q, q - 40, q, q - 40] :
-                    q < 900 ? [355, 315, q - 355, q - 355 - topWidth] :
-                    q < 1050 ? [425, 385, q - 425, q - 425 - topWidth] :
-                    q < 1200 ? [490, 450, q - 490, q - 490 - topWidth] :
-                    q < 1350 ? [550, 510, q - 550, q - 550 - topWidth] :
-                                [605, 565, q - 605, q - 605 - topWidth];
+                return q < 750 ? [q, q - 40, q, q - 40, 1] :
+                    q < 900 ? [355, 315, q - 355, q - 335 - 180 - 100, 0] :
+                    q < 1050 ? [425, 385, q - 425, q - 425 - 180 - 80, 0] :
+                    q < 1200 ? [490, 450, q - 490, q - 490 - 180 - 60, 0] :
+                    q < 1350 ? [550, 510, q - 550, q - 550 - 180 - 40, 0] :
+                                [605, 565, q - 605, q - 605 - 180 - 20, 0];
             }
         }
 
@@ -1255,8 +1291,31 @@
                 });
                 document.getElementById(sidebarText).style.width = w[1] + 'px';
             }
-            if (document.getElementById('dropdown-contents')) {
-                document.getElementById('dropdown-contents').style.width = w[3] + 'px';
+            if (document.getElementById(dropdownName)) {
+                if (w[4] == 0) {
+                    if (!document.getElementById('dropdown').firstChild) {
+                        var dd = document.getElementById('sidebar-' + _sidebar.side).firstChild;
+                        dd.style.transform = null;
+                        document.getElementById('dropdown').appendChild(dd);
+                        if (state.bounds.getCenter().lng > state.center) {
+                            _sidebar.setSidebar('left');
+                        } else {
+                            _sidebar.setSidebar('right');
+                        }
+                    }
+                    document.getElementById(dropdownName).style.left = (w[3] / 2) + 'px';
+                    document.getElementById(dropdownName).style.width = '180px';
+                }
+                if (w[4] == 1) {
+                    if (document.getElementById('dropdown').firstChild) {
+                        var dd = document.getElementById('dropdown').firstChild;
+                        var fc = document.getElementById('sidebar-' + _sidebar.side).firstChild;
+                        document.getElementById('sidebar-' + _sidebar.side).insertBefore(dd, fc);
+                        _sidebar.setSidebar('right');
+                    }
+                    document.getElementById(dropdownName).style.left = '20px';
+                    document.getElementById(dropdownName).style.width = w[1] + 'px';
+                }
             }
         }
 
@@ -1297,9 +1356,9 @@
         }
 
         //generating dropdown menu options from JSON inputs
-        function dropdownOptions(inputs, value, text) {
+        function dropdownOptions(inputs) {
             var optionsOut = [];
-            inputs.forEach((f) => optionsOut.push('<option value="' + f.properties[value] + '">' + f.properties[text] + '</option>'))
+            inputs.forEach((f) => optionsOut.push('<option value="' + f + '">' + f + '</option>'))
             return optionsOut;
         }
 

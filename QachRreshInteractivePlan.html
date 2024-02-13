@@ -721,6 +721,10 @@
                     }
                     if (orientate != orientation.state) {
                         orientation.size = orientate;
+                        document.getElementById('map').style.transition = null;
+                        Array.from(document.getElementsByClassName('sidebar')).forEach(s => {
+                            s.style.transition = null;
+                        });
                     }
                 }, 100);
             });
